@@ -1,0 +1,97 @@
+﻿特價快報 設定教學
+==================================
+完成後：GitHub 每 2 小時自動搜尋一次廉航促銷新聞，有新的就傳到你的 Telegram；
+標題有寫開搶時間的，會在開搶前約 30 分鐘再提醒你一次。
+你的電腦不用開、家裡不用有網路。全部免費。
+
+────────────────────
+第一部分：建立 Telegram 機器人（約 5 分鐘，用手機）
+────────────────────
+1. 安裝 Telegram App，用手機號碼註冊。
+
+2. 在 Telegram 上方搜尋「BotFather」，點有藍色勾勾的那個 → 按「開始 / Start」。
+
+3. 傳送：/newbot
+   ‧ 它問名字：隨便取，例如「我的特價快報」
+   ‧ 它問帳號：要用英文、結尾一定要是 bot，例如 lo_flight_deal_bot
+     （被用過的話換一個）
+
+4. 成功後，BotFather 會回一段很長的字，像這樣：
+      123456789:AAH8xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   這就是【TOKEN】，複製起來存好，等一下要用。
+   ⚠ TOKEN 等於機器人的密碼，不要給別人看。
+
+5. 點 BotFather 訊息裡的機器人連結（t.me/你取的帳號），
+   打開你的機器人 → 按「開始 / Start」→ 隨便傳一句話，例如「你好」。
+   （這步一定要做，機器人才能傳訊息給你）
+
+6. 取得【CHAT ID】：用電腦或手機瀏覽器打開下面網址，
+   把【TOKEN】換成你的 TOKEN（注意 bot 和 TOKEN 中間沒有空格）：
+      https://api.telegram.org/bot【TOKEN】/getUpdates
+   頁面會出現一堆文字，找到  "chat":{"id":  後面那串數字，例如 987654321
+   這就是【CHAT ID】，複製起來。
+   ‧ 如果只看到 {"ok":true,"result":[]}：回到 Telegram 對機器人再傳一句話，重新整理網頁。
+
+────────────────────
+第二部分：放到 GitHub（約 10 分鐘，用電腦）
+────────────────────
+1. 登入 GitHub → 右上角「＋」→「New repository」
+   ‧ Repository name：deal-watch（或其他英文名字）
+   ‧ 選「Private」（私人，別人看不到）
+   ‧ 按「Create repository」
+
+2. 上傳檔案：
+   在新的空白頁面，點藍字「uploading an existing file」。
+   把解壓縮後「特價快報」資料夾裡的【全部東西】拖進去，
+   包含「.github」資料夾、deal_watch.py、關鍵字.txt、設定教學.txt。
+   下方按綠色「Commit changes」。
+   ‧ 上傳後檢查：檔案清單裡要看得到「.github」資料夾。
+   ‧ 如果沒有 .github：點「Add file」→「Create new file」，
+     檔名輸入  .github/workflows/deal-watch.yml
+     再用記事本打開資料夾裡的 .github\workflows\deal-watch.yml，全部複製貼上，按「Commit changes」。
+
+3. 設定密碼（Secrets）：
+   點上方「Settings」→ 左邊「Secrets and variables」→「Actions」
+   → 綠色「New repository secret」，新增兩個：
+      Name：TELEGRAM_TOKEN      Secret：貼上【TOKEN】
+      Name：TELEGRAM_CHAT_ID    Secret：貼上【CHAT ID】
+   名字要一模一樣（全大寫、底線）。
+
+4. 測試：
+   點上方「Actions」（如果有綠色按鈕要你啟用，按下去）
+   → 左邊點「特價快報」→ 右邊「Run workflow」
+   → 勾選「只傳一則測試訊息」→ 綠色「Run workflow」
+   約 30 秒後，Telegram 應該收到「✅ 特價快報測試成功！」
+
+5. 正式啟動：
+   再按一次「Run workflow」，這次【不要勾】測試 → Run workflow
+   Telegram 會收到「特價快報開始運作！」和最近的促銷消息。
+   之後會自動執行，不用再管它：
+   ‧ 每 30 分鐘檢查一次「開搶提醒」
+   ‧ 每 2 小時搜尋一次促銷新聞
+
+────────────────────
+之後想調整
+────────────────────
+‧ 增減追蹤的航空：在 GitHub 點「關鍵字.txt」→ 右上角鉛筆圖示 → 修改 → Commit changes。
+‧ 改搜尋新聞的頻率：打開 deal_watch.py，修改這行的數字：
+     SEARCH_EVERY_HOURS = 2      （1 = 每小時、6 = 每 6 小時）
+‧ 改提前提醒的時間：同一個檔案，修改
+     REMIND_BEFORE = 30          （開搶前幾分鐘提醒）
+‧ 暫停：Actions →「特價快報」→ 右上「…」→「Disable workflow」。
+
+────────────────────
+常見問題
+────────────────────
+‧ 執行失敗（Actions 裡出現紅色 ✗）：點進去看錯誤，截圖給 Claude。
+  最常見是 Secrets 名字打錯，或 TOKEN / CHAT ID 複製不完整。
+‧ GitHub 規定：如果專案 60 天都沒有任何更新，定時執行會被自動暫停，
+  GitHub 會寄信通知你，到 Actions 按「Enable workflow」就能恢復。
+‧ 定時執行的時間不會很準，GitHub 忙的時候可能晚幾分鐘到幾十分鐘，這是正常的。
+‧ 通知的是「新聞報導的促銷消息」，實際票價和開賣時間請以航空公司官網為準。
+‧ 開搶提醒：要新聞標題裡有寫時間（例如「明早10點開搶」）才會提醒。
+  寫「（從標題推測）」的，代表標題只寫了幾點、沒寫哪天，日期是程式猜的。
+  GitHub 的定時執行會延遲，提醒可能落在開搶前 15～45 分鐘，
+  建議同時點通知裡的「📅 加到 Google 行事曆」，行事曆的時間是準的。
+‧ 免費額度：Private 專案每月有 2,000 分鐘免費執行時間，
+  特價快報每月大約用 1,500 分鐘，在免費範圍內。
