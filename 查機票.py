@@ -319,6 +319,10 @@ def fetch_returns(q, out_item):
     except Exception:
         return [], False
     raw = polite_call(get_return_flights, rq)
+    # 只看同一家航空的回程。別家的回程不能跟這班去程一起買，Google 本來就不會給價格，
+    # 不能算成「查不到價格」，不然會誤報（例如選了虎航去程，長榮的回程就沒價格）。
+    me = out_item["airline"]
+    raw = [f for f in raw if (" / ".join(dict.fromkeys(f.airlines or [])) or "未知航空") == me]
     rets = [r for r in (describe(f) for f in raw) if r]
     rets = [r for r in rets if r["airline"] == out_item["airline"]
             and in_hours(r["hour"], 回程最早出發, 回程最晚出發)]
