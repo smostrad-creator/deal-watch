@@ -50,8 +50,12 @@ def check(frm, to, days):
             why = f"頁面裡沒有航班資料（頁面長度 {len(html)} 字）"
         return False, f"{label}：{why}"
     try:
-        data = script.text().split("data:", 1)[1].rsplit(",", 1)[0]
-        flights = parser.parse_payload(json.loads(data), include_top_results=True)
+        js = script.text()
+        i = js.index("data:") + 5
+        while js[i].isspace():
+            i += 1
+        payload, _ = json.JSONDecoder().raw_decode(js, i)
+        flights = parser.parse_payload(payload, include_top_results=True)
     except Exception as e:
         return False, f"{label}：讀取資料失敗（{type(e).__name__}）"
     priced = [f for f in flights if f.price]
