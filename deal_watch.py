@@ -170,22 +170,31 @@ def decode_google_news(link):
 def article_text(url):
     """讀新聞網頁的摘要和開頭幾段"""
     page, _ = http_get(url)
+    # 先清掉網頁裡給程式看的隱藏資料（script、style），只留真正的文章
+    page = re.sub(r"<(script|style|noscript|svg)[^>]*>.*?</\1>", " ", page, flags=re.S | re.I)
     parts = []
     for pat in (r'<meta[^>]+property="og:description"[^>]+content="([^"]+)"',
                 r'<meta[^>]+name="description"[^>]+content="([^"]+)"'):
         m = re.search(pat, page)
         if m:
             parts.append(html.unescape(m.group(1)))
-    for p in re.findall(r"<p[^>]*>(.*?)</p>", page, flags=re.S)[:12]:
+    for p in re.findall(r"<p(?:\s[^>]*)?>(.*?)</p>", page, flags=re.S | re.I)[:15]:
         t = html.unescape(re.sub(r"<[^>]+>", "", p)).strip()
-        if len(t) > 15:
+        if len(t) > 15 and "{" not in t and "@context" not in t:
             parts.append(t)
     return "\n".join(parts)
 
 
+PACKAGE_WORDS = ["自由行", "天1夜", "天2夜", "天3夜", "天4夜", "機加酒", "套裝", "團費", "跟團", "住宿", "飯店", "旅行社"]
+
+
 def price_sentence(text):
-    """找出有價格的那一句（最多 70 個字）"""
+    """找出有價格的那一句（最多 70 個字）；國內線、套裝行程的價格不算"""
     for sent in re.split(r"[。！\n]", text):
+        if any(w in sent for w in PACKAGE_WORDS) or any(w in sent for w in BYLINE_WORDS):
+            continue
+        if any(w in sent for w in DOMESTIC_WORDS) and not any(w in sent for w in INTL_WORDS):
+            continue
         if (PRICE_RE.search(sent) and any(w in sent for w in ("元", "折", "NT", "TWD"))
                 and not any(w in sent for w in ("股", "營收", "獲利", "EPS", "市值"))):
             sent = sent.strip()
@@ -219,13 +228,18 @@ def check_detail(item):
     return False
 
 
-SALE_KEYS = ["開賣", "開搶", "銷售", "搶購", "開放購票", "開放訂位", "起跑", "登場", "限時", "快閃", "上架"]
+SALE_KEYS = ["開賣", "開搶", "銷售", "搶購", "開放購票", "開放訂位", "限時", "快閃", "上架"]
+BYLINE_WORDS = ["記者", "特派", "｜", "|", "©", "http", "報導", "編輯", "撰文", "{", "}"]
 
 
-def body_sale_times(text, pub):
+def body_sale_times(text, pub, title=""):
     """從內文找出開賣時間：有「開賣、銷售期間…」的句子裡的日期時間。回傳 [(時間, 是否推測, 說明)]"""
     out, have = [], set()
+    head = re.sub(r"\s+", "", title)[:10]
     for sent in re.split(r"[。！\n]", text or ""):
+        flat = re.sub(r"\s+", "", sent)
+        if len(flat) > 220 or any(w in sent for w in BYLINE_WORDS) or (head and head in flat):
+            continue  # 署名、發稿時間、跟標題重複的那行，不拿來找開賣時間
         pos = [sent.find(k) for k in SALE_KEYS if k in sent]
         if not pos:
             continue
@@ -446,7 +460,7 @@ def main():
         st = parse_start(it["title"], it["pub"])
         if st:
             starts.append((st[0], st[1], ""))
-        for t2, g2, ctx in body_sale_times(it.get("body"), it["pub"]):
+        for t2, g2, ctx in body_sale_times(it.get("body"), it["pub"], it["title"]):
             if all(abs((t2 - x[0]).total_seconds()) > 60 for x in starts):
                 starts.append((t2, g2, ctx))
         it["starts"] = starts
