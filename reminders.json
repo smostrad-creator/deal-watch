@@ -52,5 +52,107 @@
 "link": "https://www.nownews.com/news/6888773",
 "start": "2026-11-06T10:00:00+08:00",
 "sent": false
+},
+{
+"kind": "sale",
+"start": "2026-12-31T10:00:00+08:00",
+"title": "萬呎高空迎2027 華航首推跨年主題航班 今天上午10時限時開賣",
+"airline": "中華航空",
+"code": "CI",
+"routes": [
+{
+"from": "TPE",
+"to": "BKK",
+"fromName": "台北",
+"toName": "曼谷",
+"price": null
+}
+],
+"travel": [
+null,
+null
+]
+},
+{
+"kind": "sale",
+"start": "2026-11-09T10:00:00+08:00",
+"title": "便宜機票促銷！虎航優惠「夏季航班1599元起」限時2天快搶",
+"airline": "台灣虎航",
+"code": "IT",
+"routes": [
+{
+"from": "TPE",
+"to": "YGJ",
+"fromName": "台北",
+"toName": "米子",
+"price": 1799
+},
+{
+"from": "TPE",
+"to": "OIT",
+"fromName": "台北",
+"toName": "大分",
+"price": 1799
+},
+{
+"from": "KHH",
+"to": "OKJ",
+"fromName": "高雄",
+"toName": "岡山",
+"price": 1799
+},
+{
+"from": "KHH",
+"to": "ISG",
+"fromName": "高雄",
+"toName": "石垣島",
+"price": 1599
+}
+],
+"travel": [
+"2027-03-28",
+"2027-10-30"
+]
+},
+{
+"kind": "sale",
+"start": "2026-11-06T10:00:00+08:00",
+"title": "台灣虎航第2波夏季航班1599元起上午10時開賣 預告ITF旅展全航線999元",
+"airline": "台灣虎航",
+"code": "IT",
+"routes": [
+{
+"from": "TPE",
+"to": "YGJ",
+"fromName": "台北",
+"toName": "米子",
+"price": 1799
+},
+{
+"from": "TPE",
+"to": "OIT",
+"fromName": "台北",
+"toName": "大分",
+"price": 1799
+},
+{
+"from": "KHH",
+"to": "OKJ",
+"fromName": "高雄",
+"toName": "岡山",
+"price": 1799
+},
+{
+"from": "KHH",
+"to": "ISG",
+"fromName": "高雄",
+"toName": "石垣島",
+"price": 1599
+}
+],
+"travel": [
+"2027-03-28",
+"2027-10-30"
+]
 }
 ]
