@@ -65,6 +65,7 @@
 #                     以下是程式本體，不用改
 # ════════════════════════════════════════════════════════════
 
+import json
 import os
 import re
 import sys
@@ -464,10 +465,83 @@ def _key(f):
         return None
 
 
+# ── 備用來源：SerpApi（被 Google 擋住時才用）──
+SERP_USED = 0          # 這次執行用了幾次 SerpApi
+SERP_MAX = int(os.environ.get("SERPAPI_MAX", "40"))  # 每次執行最多用幾次，避免一次用光每月額度
+
+
+def serpapi_flights(q):
+    """用 SerpApi 查同一組條件，轉成跟原本一樣的格式。沒有金鑰、超過上限或失敗都回傳 None"""
+    global SERP_USED
+    key = os.environ.get("SERPAPI_KEY", "").strip()
+    if not key or SERP_USED >= SERP_MAX:
+        return None
+    import urllib.parse
+    import urllib.request
+    from fast_flights.model import Airport, CarbonEmission, Flights, SimpleDatetime, SingleFlight
+    try:
+        legs = q._flights
+        frm, to = legs[0].from_airport, legs[0].to_airport
+        d1, d2 = str(legs[0].date)[:10], str(legs[1].date)[:10]
+    except Exception:
+        return None
+    params = {"engine": "google_flights", "departure_id": frm, "arrival_id": to,
+              "outbound_date": d1, "return_date": d2, "type": "1",
+              "currency": "TWD", "hl": "zh-TW", "gl": "tw", "adults": str(大人人數),
+              "stops": {0: "1", 1: "2", 2: "3"}.get(轉機, "0"), "api_key": key}
+    url = "https://serpapi.com/search.json?" + urllib.parse.urlencode(params)
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url), timeout=60) as r:
+            data = json.loads(r.read().decode("utf-8"))
+    except Exception as e:
+        print(f"      ✗ 備用來源（SerpApi）也失敗：{str(e)[:80]}")
+        return None
+    SERP_USED += 1
+    if data.get("error"):
+        print(f"      ✗ 備用來源（SerpApi）：{str(data['error'])[:80]}")
+        return None
+
+    def dt(v):
+        a, b = (v or "1970-01-01 00:00").split(" ")
+        y, m, d = map(int, a.split("-"))
+        hh, mm = map(int, b.split(":"))
+        return [y, m, d], [hh, mm]
+
+    out = []
+    for it in (data.get("best_flights") or []) + (data.get("other_flights") or []):
+        segs = []
+        for sf in it.get("flights") or []:
+            dd, dtm = dt(sf.get("departure_airport", {}).get("time"))
+            ad, atm = dt(sf.get("arrival_airport", {}).get("time"))
+            fno = (sf.get("flight_number") or "").split(" ")
+            segs.append(SingleFlight(
+                from_airport=Airport(code=sf.get("departure_airport", {}).get("id", ""), name=sf.get("departure_airport", {}).get("name", "")),
+                to_airport=Airport(code=sf.get("arrival_airport", {}).get("id", ""), name=sf.get("arrival_airport", {}).get("name", "")),
+                departure=SimpleDatetime(date=dd, time=dtm), arrival=SimpleDatetime(date=ad, time=atm),
+                duration=sf.get("duration") or 0, plane_type=sf.get("airplane") or "",
+                airline_code=fno[0] if fno else "", flight_number=fno[1] if len(fno) > 1 else ""))
+        if not segs:
+            continue
+        names = list(dict.fromkeys(sf.get("airline", "") for sf in it.get("flights") or [] if sf.get("airline")))
+        out.append(Flights(type="serpapi", price=it.get("price"), airlines=names, flights=segs,
+                           carbon=CarbonEmission(typical_on_route=0, emission=0)))
+    print(f"      ✓ 改用備用來源（SerpApi）查到 {len(out)} 班（本次第 {SERP_USED} 次）")
+    return out
+
+
 def get_flights_complete(q):
-    """第一階段（網頁一打開的航班）＋第二階段（網頁之後再載入的完整清單，依價格排序），合併起來"""
+    """第一階段（網頁一打開的航班）＋第二階段（網頁之後再載入的完整清單，依價格排序），合併起來。
+    被 Google 擋住（或全部沒價格）時，改用備用來源 SerpApi"""
     from fast_flights import get_flights
-    flights = list(polite_call(get_flights, q, strict=True) or [])
+    try:
+        flights = list(polite_call(get_flights, q, strict=True) or [])
+        if flights and not any(f.price for f in flights):
+            raise 查詢失敗("有航班但全部沒有價格（可能被半擋）")
+    except 查詢失敗:
+        alt = serpapi_flights(q)
+        if alt is None:
+            raise
+        return alt
     if not 補抓完整清單:
         return flights
     try:

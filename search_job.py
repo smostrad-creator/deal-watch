@@ -230,7 +230,9 @@ def main():
             head = f"共 {len(data['pairs'])} 組日期"
 
         fail = getattr(core, "FAIL_NOTE", "") or ""
-        out.update(notes=notes, file=xfile, error=None, failNote=fail)
+        serp = getattr(core, "SERP_USED", 0)
+        serp_txt = f"ℹ️ 有 {serp} 組被 Google 擋住，改用備用來源（SerpApi）查到。\n\n" if serp else ""
+        out.update(notes=notes, file=xfile, error=None, failNote=fail, serpUsed=serp)
         names = [a["name"] for a in out.get("summary") or []]
         if len(names) > 1:
             # 先不傳結果：等使用者在查詢頁選好航空公司，按「確定」後才傳（只傳一次）
@@ -238,7 +240,7 @@ def main():
                 json.dump(out, f, ensure_ascii=False)
             send_text(f"✅ <b>{html.escape(route_name(p))}　查完了</b>\n"
                       f"找到 {len(names)} 家航空公司" + (f"，另有 {len(notes)} 家查不到價格" if notes else "") + "。\n\n"
-                      + (f"⚠️ {html.escape(fail)}\n\n" if fail else "")
+                      + (f"⚠️ {html.escape(fail)}\n\n" if fail else "") + serp_txt
                       + "👉 請回到查詢頁，選擇要比較的航空公司。\n"
                       + "選好後，才會傳完整結果和 Excel 給你。")
             print("✓ 完成，等使用者選航空公司")
@@ -253,7 +255,7 @@ def main():
                       "\n".join("⚠️ <b>" + html.escape(n.split("：")[0]) + "</b>" for n in notes) +
                       "\n\n請到 Google Flights 查看價格。")
         msg = (f"✈️ <b>{html.escape(route_name(p))}　查詢完成</b>\n{head}\n\n" +
-               (f"⚠️ {html.escape(fail)}\n\n" if fail else "") +
+               (f"⚠️ {html.escape(fail)}\n\n" if fail else "") + serp_txt +
                ("\n".join(lines) if lines else "沒有找到有價格的航班") +
                (f"\n\n⚠️ 另有 {len(notes)} 家航空查不到價格（見上一則）" if notes else "") +
                ("\n\n📊 完整比價表：打開查詢頁看「最近結果」"))
