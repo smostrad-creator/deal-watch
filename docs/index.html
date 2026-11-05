@@ -31,6 +31,32 @@ body{font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,san
 .toprow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.topbtns{margin-left:auto;display:flex;gap:6px;align-items:center}.topbtns .link{font-size:14px}.gearbtn{border:1px solid var(--line);background:var(--surface);font-size:18px;width:40px;height:40px}
 .note{white-space:pre-line}
 .log{color:var(--ink)}
+.mtabs{display:flex;gap:0;margin:0 0 14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.mtabs button{flex:1;border:0;border-radius:0;background:transparent;color:var(--muted);padding:11px 8px;font-size:15px;font-weight:700}
+.mtabs button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+body.trackmode .go,body.trackmode .checks,body.trackmode #results,body.trackmode #progress{display:none}
+#tTargetBox[hidden],#tAmountBox[hidden],#trackOpts[hidden],#trackList[hidden]{display:none}
+.track-opts{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.track-opts h3{margin:0 0 10px;font-size:15px}
+.opts2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.tair{margin-top:12px}
+.tair summary{color:var(--accent);font-weight:700;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:16px;padding:4px 10px;font-size:13px;color:var(--ink)}
+.chip input{margin:0}
+.addtrack{margin-top:16px;width:100%;background:var(--accent);color:var(--accent-ink);border:0;padding:13px;font-size:16px;font-weight:700}
+.addtrack:disabled{opacity:.5}
+#trackList{margin-top:24px}
+.tl-head{display:flex;align-items:center;justify-content:space-between}
+.tl-head h2{font-size:18px;margin:0 0 10px}
+.tcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.tcard .t1{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:16px}
+.tcard .t2{font-size:13px;color:var(--muted);margin-top:4px}
+.tcard .t3{font-size:14px;margin-top:6px}
+.tcard .t4{font-size:12px;color:var(--muted);margin-top:4px}
+.tcard .t4 a{color:var(--accent)}
+.tdel{border:1px solid var(--line);background:transparent;color:var(--danger);padding:4px 12px;font-size:13px}
+.tbad{color:var(--muted)}
 h1{font-size:22px;margin:0 0 18px;font-weight:700;letter-spacing:.02em}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
 .route{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end;margin-bottom:16px}
@@ -317,6 +343,19 @@ summary{cursor:pointer;color:var(--accent);font-weight:700}
       <label><input type="checkbox" id="demo"> 示範模式 <small>（假資料，不連 Google）</small></label>
     </div>
 
+    <div id="trackOpts" class="track-opts" hidden>
+      <h3>通知方式</h3>
+      <div class="opts2">
+        <label class="f">什麼時候通知我
+          <select id="tMode"><option value="drop">有降價就通知</option><option value="below">低於目標價</option><option value="dropBy">降價超過多少才通知</option><option value="any">漲跌都通知</option></select></label>
+        <label class="f" id="tTargetBox" hidden>目標價（來回總價，台幣）<input type="number" id="tTarget" inputmode="numeric" placeholder="例如 8000"></label>
+        <label class="f" id="tAmountBox" hidden>降超過多少才通知（台幣）<input type="number" id="tAmount" inputmode="numeric" placeholder="例如 300"></label>
+      </div>
+      <details class="tair"><summary>只追蹤特定航空公司（不選＝全部）</summary><div id="tAirlines" class="chips"></div></details>
+      <button type="button" id="addTrack" class="addtrack">＋ 加入降價追蹤</button>
+      <p class="hint" style="margin:8px 0 0">每 2 小時自動查一次，符合條件就傳 Telegram。</p>
+    </div>
+
     <div class="go">
       <button type="submit" id="goBtn">搜尋</button>
       <button type="button" id="stopBtn" class="stop" hidden>■ 停止</button>
@@ -330,6 +369,11 @@ summary{cursor:pointer;color:var(--accent);font-weight:700}
   </div>
   <div class="err" id="err" hidden role="alert"></div>
   <div class="note" id="note" hidden role="status"></div>
+
+  <section id="trackList" hidden>
+    <div class="tl-head"><h2>我的追蹤</h2><button type="button" class="link" id="tRefresh">重新整理</button></div>
+    <div id="tlist"></div>
+  </section>
 
   <section id="results" hidden>
     <div class="npb" id="npb" hidden role="alert"></div>
@@ -1266,6 +1310,7 @@ function showResults(R){
   const go = () => {
     if (lastAsk.airlines.length > 1) askAirlines(); else applyChoice(chosen);
   };
+  if (R.failNote) { $('err').textContent = '⚠️ ' + R.failNote + '。可以過一陣子再查一次。'; $('err').hidden = false; }
   if (R.notes && R.notes.length && !notesShown) { notesShown = true; showNoPrice(R.notes, go); } else { showBanner(R.notes); go(); }
 }
 
