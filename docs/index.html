@@ -260,6 +260,7 @@ summary{cursor:pointer;color:var(--accent);font-weight:700}
 <div class="wrap">
   <h1 class="toprow">查機票 <small class="ver">手機版</small>
     <span class="topbtns"><button type="button" class="link" id="lastBtn">最近結果</button><button type="button" class="gearbtn" id="gear" aria-label="設定">⚙️</button></span></h1>
+  <div class="mtabs" role="group" aria-label="功能"><button type="button" id="mt-search" aria-pressed="true">🔍 查機票</button><button type="button" id="mt-track" aria-pressed="false">📉 降價追蹤</button></div>
   <div class="note" id="setupHint" hidden>第一次使用：請按右上角 ⚙️ 貼上 GitHub 通行碼。</div>
 
   <form class="panel" id="form" autocomplete="off">
@@ -353,7 +354,7 @@ summary{cursor:pointer;color:var(--accent);font-weight:700}
       </div>
       <details class="tair"><summary>只追蹤特定航空公司（不選＝全部）</summary><div id="tAirlines" class="chips"></div></details>
       <button type="button" id="addTrack" class="addtrack">＋ 加入降價追蹤</button>
-      <p class="hint" style="margin:8px 0 0">每 2 小時自動查一次，符合條件就傳 Telegram。</p>
+      <p class="hint" style="margin:8px 0 0">每天早上 8 點、晚上 8 點自動查一次；特價快報推播特價時，開賣後也會自動加查。符合條件就傳 Telegram。</p>
     </div>
 
     <div class="go">
@@ -1369,6 +1370,145 @@ $('stopBtn').onclick = async () => {
 // 打開頁面時，如果網址有 #results 就顯示最近一次的結果（從 Telegram 點進來）
 if (location.hash === '#results' && GH.token) loadResults(null, 0);
 $('lastBtn').onclick = () => { if (!GH.token) return openSettings(); $('err').hidden = true; loadResults(null, 0); };
+</script>
+
+<script>
+// ════════ 降價追蹤（手機版）════════
+const COMMON_AIRLINES = ['台灣虎航','長榮航空','中華航空','星宇航空','國泰航空','香港航空','香港快運航空','樂桃航空','捷星日本航空','酷航',
+  '亞洲航空','越捷航空','真航空','釜山航空','濟州航空','易斯達航空','德威航空','大韓航空','韓亞航空','日本航空','全日空',
+  '泰國獅子航空','宿霧太平洋航空','華信航空','立榮航空','菲律賓航空','越南航空','新加坡航空','泰國國際航空'];
+const b64enc = s => { const b = new TextEncoder().encode(s); let t = ''; b.forEach(c => t += String.fromCharCode(c)); return btoa(t); };
+const b64dec = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, '')), c => c.charCodeAt(0)));
+async function getFile(path){
+  const r = await gh(`/contents/${encodeURIComponent(path)}?ref=main`);
+  if (r.status === 404) return {data: null, sha: null};
+  const j = await r.json();
+  return {data: JSON.parse(b64dec(j.content)), sha: j.sha};
+}
+async function putFile(path, data, sha, message){
+  const body = {message, content: b64enc(JSON.stringify(data, null, 1)), branch: 'main'};
+  if (sha) body.sha = sha;
+  const r = await gh(`/contents/${encodeURIComponent(path)}`, {method: 'PUT', body: JSON.stringify(body)});
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.message || `GitHub 回應 ${r.status}`); }
+}
+async function updateTracks(fn, message){
+  for (let i = 0; i < 2; i++) {
+    const {data, sha} = await getFile('tracks.json');
+    const list = fn(data || []);
+    try { await putFile('tracks.json', list, sha, message); return list; }
+    catch (e) { if (i) throw e; }  // 剛好有人同時改，重讀一次再試
+  }
+}
+
+// ── 分頁切換 ──
+function setMain(m){
+  document.body.classList.toggle('trackmode', m === 'track');
+  $('mt-search').setAttribute('aria-pressed', m === 'search'); $('mt-track').setAttribute('aria-pressed', m === 'track');
+  $('trackOpts').hidden = m !== 'track'; $('trackList').hidden = m !== 'track';
+  if (m === 'track') { fillAirlineChips(); loadTracks(); }
+}
+$('mt-search').onclick = () => setMain('search');
+$('mt-track').onclick = () => setMain('track');
+
+function fillAirlineChips(){
+  const box = $('tAirlines'); const had = new Set([...box.querySelectorAll('input:checked')].map(i => i.value));
+  const extra = (lastResult && lastResult.summary || []).map(a => a.name);
+  const names = [...new Set([...extra, ...COMMON_AIRLINES])];
+  box.innerHTML = names.map(n => `<label class="chip"><input type="checkbox" value="${esc(n)}" ${had.has(n) ? 'checked' : ''}>${esc(n)}</label>`).join('');
+}
+$('tMode').onchange = () => {
+  $('tTargetBox').hidden = $('tMode').value !== 'below';
+  $('tAmountBox').hidden = $('tMode').value !== 'dropBy';
+};
+
+function trackDatesDesc(t){
+  if (t.kind === 'scan') {
+    const s = t.scan;
+    const ym = v => `${v.slice(0, 4)}年${Number(v.slice(5, 7))}月`;
+    const rng = s.startDate ? `${shortDate(s.startDate)}～${shortDate(s.endDate)}` : (s.startMonth === s.endMonth ? ym(s.startMonth) : `${ym(s.startMonth)}～${ym(s.endMonth)}`);
+    return `${rng}，每天出發、玩 ${s.days} 天`;
+  }
+  return t.pairs.length === 1 ? `${shortDate(t.pairs[0][0])}～${shortDate(t.pairs[0][1])}` : `${t.pairs.length} 組日期（${shortDate(t.pairs[0][0])} 起）`;
+}
+function notifyDesc(n){
+  return n.mode === 'below' ? `低於 ${fmt(n.target)} 時通知` : n.mode === 'dropBy' ? `降價超過 ${fmt(n.amount)} 時通知`
+       : n.mode === 'any' ? '漲跌都通知' : '有降價就通知';
+}
+
+// ── 加入追蹤 ──
+$('addTrack').onclick = async () => {
+  if (!GH.token) { openSettings(); return showErr('要先設定 GitHub 通行碼（右上角 ⚙️）。'); }
+  $('err').hidden = true;
+  const origin = apOrigin.get(), dest = apDest.get();
+  if (!origin) { $('origin').focus(); return showErr('請先選擇出發地。'); }
+  if (!dest) { $('dest').focus(); return showErr('請先選擇目的地。'); }
+  if (origin === dest) return showErr('出發地和目的地不能一樣。');
+  const t = {id: Date.now().toString(36), created: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    origin, dest, originLabel: $('origin').value, destLabel: $('dest').value,
+    stops: $('stops').value, adults: Number($('adults').value),
+    outFrom: hour('outFrom'), outTo: hour('outTo'), retFrom: hour('retFrom'), retTo: hour('retTo'),
+    airlines: [...document.querySelectorAll('#tAirlines input:checked')].map(i => i.value), active: true};
+  if (mode === 'scan') {
+    const n = scanPairs().length;
+    if (!n) return showErr('這個區間放不下這麼多天的行程，請調整。');
+    if (n > 45) return showErr(`區間追蹤最多 45 個出發日，目前有 ${n} 個。請縮短區間（太多會很慢，也容易被 Google 擋）。`);
+    t.kind = 'scan';
+    t.scan = scanBy === 'date' ? {startDate: sRange.a, endDate: sRange.b, days: Number($('sDays').value)}
+                               : {startMonth: $('sStart').value, endMonth: $('sEnd').value, days: Number($('sDays').value)};
+  } else {
+    const ps = mode === 'pairs' ? pairs.map(p => [p.a, p.b]) : weeklyPairs();
+    if (!ps.length) return showErr('沒有任何日期。');
+    if (ps.length > 12) return showErr(`一條追蹤最多 12 組日期，目前有 ${ps.length} 組，請減少，或改用「月份區間」。`);
+    t.kind = 'pairs'; t.pairs = ps;
+  }
+  const m = $('tMode').value;
+  t.notify = {mode: m};
+  if (m === 'below') { t.notify.target = Number($('tTarget').value); if (!(t.notify.target > 0)) return showErr('請填目標價，例如 8000。'); }
+  if (m === 'dropBy') { t.notify.amount = Number($('tAmount').value); if (!(t.notify.amount > 0)) return showErr('請填降多少才通知，例如 300。'); }
+
+  const btn = $('addTrack'); btn.disabled = true; btn.textContent = '加入中…';
+  try {
+    await updateTracks(list => [...list, t], '新增追蹤：' + t.origin + '-' + t.dest);
+    await gh('/actions/workflows/track.yml/dispatches', {method: 'POST',
+      body: JSON.stringify({ref: 'main', inputs: {track_id: t.id}})}).catch(() => {});
+    $('note').textContent = '✅ 已加入追蹤！幾分鐘內 Telegram 會收到「開始追蹤」和目前最低價，之後每天早上 8 點、晚上 8 點自動檢查。';
+    $('note').hidden = false;
+    loadTracks();
+  } catch (e) { showErr('加入失敗：' + e.message); }
+  btn.disabled = false; btn.textContent = '＋ 加入降價追蹤';
+};
+
+// ── 追蹤清單 ──
+async function loadTracks(){
+  const box = $('tlist');
+  if (!GH.token) { box.innerHTML = '<p class="hint">設定通行碼後就能看到你的追蹤清單。</p>'; return; }
+  box.innerHTML = '<p class="hint">讀取中…</p>';
+  let list, state;
+  try { list = (await getFile('tracks.json')).data || []; state = (await getFile('track_state.json')).data || {}; }
+  catch (e) { box.innerHTML = `<p class="hint">讀取失敗：${esc(e.message)}</p>`; return; }
+  if (!list.length) { box.innerHTML = '<p class="hint">還沒有追蹤的航班。在上面選好條件，按「＋ 加入降價追蹤」。</p>'; return; }
+  const stopTxt = {0: '直飛', 1: '最多轉 1 次', any: '可轉機'};
+  box.innerHTML = list.slice().reverse().map(t => {
+    const s = state[t.id] || {};
+    const status = s.expired ? '<span class="tbad">⌛ 日期已過，已停止追蹤</span>'
+      : s.last != null ? `目前最低 <b>${fmt(s.last)}</b>（${esc(s.lastAirline || '')}　${esc(s.lastDates || '')}）`
+      : '<span class="hint">等待第一次檢查（幾分鐘內）</span>';
+    const low = s.min != null ? `<div class="t3">追蹤以來最低 <b>${fmt(s.min)}</b>（${esc(s.minAt || '')}）</div>` : '';
+    const when = s.lastCheck ? `<div class="t4">上次檢查：${esc(s.lastCheck)}${s.fails ? `　⚠️ 最近 ${s.fails} 次查詢失敗` : ''}${s.url ? `　<a href="${esc(s.url)}" target="_blank" rel="noopener">Google Flights</a>` : ''}</div>` : '';
+    return `<div class="tcard"><div class="t1"><b>${esc(t.originLabel || t.origin)} ⇄ ${esc(t.destLabel || t.dest)}</b>
+      <button type="button" class="tdel" data-id="${esc(t.id)}">刪除</button></div>
+      <div class="t2">${esc(trackDatesDesc(t))}　${stopTxt[t.stops] || '直飛'}</div>
+      <div class="t2">${esc(notifyDesc(t.notify || {}))}　航空：${t.airlines && t.airlines.length ? esc(t.airlines.join('、')) : '全部'}</div>
+      <div class="t3">${status}</div>${low}${when}</div>`;
+  }).join('');
+  box.querySelectorAll('.tdel').forEach(b => b.onclick = async () => {
+    if (!confirm('確定要刪除這條追蹤嗎？')) return;
+    b.disabled = true; b.textContent = '刪除中…';
+    try { await updateTracks(list => list.filter(x => x.id !== b.dataset.id), '刪除追蹤'); loadTracks(); }
+    catch (e) { showErr('刪除失敗：' + e.message); b.disabled = false; b.textContent = '刪除'; }
+  });
+}
+$('tRefresh').onclick = loadTracks;
 </script>
 
 </body>
