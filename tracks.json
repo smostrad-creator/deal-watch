@@ -1,0 +1,27 @@
+[
+ {
+  "id": "mw3o9h0r",
+  "created": "2026-11-05 14:59",
+  "origin": "TPE",
+  "dest": "PUS",
+  "originLabel": "台北 TPE",
+  "destLabel": "釜山 PUS",
+  "stops": "0",
+  "adults": 1,
+  "outFrom": null,
+  "outTo": null,
+  "retFrom": null,
+  "retTo": null,
+  "airlines": [],
+  "active": true,
+  "kind": "scan",
+  "scan": {
+   "startMonth": "2027-02",
+   "endMonth": "2027-02",
+   "days": 4
+  },
+  "notify": {
+   "mode": "drop"
+  }
+ }
+]
