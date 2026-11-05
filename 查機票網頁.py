@@ -39,7 +39,7 @@ except ImportError:
     input("按 Enter 結束")
     sys.exit(1)
 
-VERSION = "11/4 版 m（讀取更穩定）"
+VERSION = "11/5 版 b（分清楚查詢失敗）"
 週 = "一二三四五六日"
 MAX_PAIRS = 26
 MAX_SCAN = 120
@@ -157,7 +157,15 @@ def run_scan(p, demo):
     log(f"✈ {core.出發地} ⇄ {core.目的地}，每天出發、玩 {days} 天，共 {len(pairs)} 個出發日" + ("（示範，假資料）" if demo else ""))
 
     day_fn = core.scan_day_demo if demo else core.scan_day_live
-    entries, day_list = [], []
+    entries, day_list, failed = [], [], []
+
+    def one_day(d1, d2):
+        ctx, outs = day_fn(d1, d2)
+        day_list.append((d1, d2, ctx["url"]))
+        for airline, lst in outs.items():
+            o = min(lst, key=lambda x: x["price"])
+            entries.append({"d1": d1, "d2": d2, "airline": airline, "price": o["price"], "o": o, "ctx": ctx})
+
     try:
         for i, (d1, d2) in enumerate(pairs, 1):
             if state["cancel"]:
@@ -165,11 +173,19 @@ def run_scan(p, demo):
             with lock:
                 state["step"] = i
             log(f"[{i}/{len(pairs)}] {d1} 出發")
-            ctx, outs = day_fn(d1, d2)
-            day_list.append((d1, d2, ctx["url"]))
-            for airline, lst in outs.items():
-                o = min(lst, key=lambda x: x["price"])
-                entries.append({"d1": d1, "d2": d2, "airline": airline, "price": o["price"], "o": o, "ctx": ctx})
+            try:
+                one_day(d1, d2)
+            except core.查詢失敗:
+                failed.append((d1, d2))
+        if failed and len(failed) < len(pairs):
+            log(f"⚠ 有 {len(failed)} 天查詢失敗，休息 30 秒後重查這幾天…")
+            core.nap(30)
+            again, failed = failed, []
+            for d1, d2 in again:
+                try:
+                    one_day(d1, d2)
+                except core.查詢失敗:
+                    failed.append((d1, d2))
     except core.已停止:
         with lock:
             state["stopped"] = True
@@ -178,6 +194,16 @@ def run_scan(p, demo):
             return
         log(f"■ 已停止，先用已掃描的 {len(day_list)} 天。")
 
+    if failed and len(failed) == len(pairs):
+        raise RuntimeError("這次查詢全部失敗，可能被 Google 暫時擋住了（不是沒有航班）。請過 10～30 分鐘再查一次。")
+    core.FAIL_NOTE = ""
+    if failed:
+        core.FAIL_NOTE = (f"有 {len(failed)} 天查詢失敗（可能被 Google 暫時擋住），這幾天沒有價格，結果不完整："
+                          + "、".join(fmt_day(d) for d, _ in failed))
+        log("⚠ " + core.FAIL_NOTE)
+        for d1, d2 in failed:
+            day_list.append((d1, d2, ""))
+        day_list.sort()
     summary = airline_summary([(e["airline"], e["price"], e["d1"]) for e in entries])
     cache.clear()
     cache.update(kind="scan", entries=entries, day_list=day_list, days=days, demo=demo,
@@ -321,7 +347,8 @@ def run_search(p):
             state["total"] = len(pairs)
         log(f"✈ {core.出發地} ⇄ {core.目的地}，{len(pairs)} 組日期" + ("（示範，假資料）" if demo else ""))
 
-        results = []
+        results, failed_pairs = [], []
+        core.FAIL_NOTE = ""
         try:
             for i, (d1, d2) in enumerate(pairs, 1):
                 if state["cancel"]:
@@ -329,7 +356,16 @@ def run_search(p):
                 with lock:
                     state["step"] = i
                 log(f"[{i}/{len(pairs)}] {d1} ~ {d2}")
-                results.append(core.search_pair_demo(d1, d2) if demo else core.search_pair_live(d1, d2))
+                try:
+                    results.append(core.search_pair_demo(d1, d2) if demo else core.search_pair_live(d1, d2))
+                except core.查詢失敗:
+                    log("    ⚠ 這組日期查詢失敗，休息 30 秒後再試一次…")
+                    core.nap(30)
+                    try:
+                        results.append(core.search_pair_live(d1, d2))
+                    except core.查詢失敗:
+                        failed_pairs.append((d1, d2))
+                        results.append(({}, {}, {}, {}, [], core.make_query(d1, d2).url()))
         except core.已停止:
             with lock:
                 state["stopped"] = True
@@ -339,6 +375,12 @@ def run_search(p):
             log(f"■ 已停止，先顯示已查完的 {len(results)} 組。")
             pairs = pairs[:len(results)]
 
+        if failed_pairs and len(failed_pairs) == len(results):
+            raise RuntimeError("這次查詢全部失敗，可能被 Google 暫時擋住了（不是沒有航班）。請過 10～30 分鐘再查一次。")
+        if failed_pairs:
+            core.FAIL_NOTE = (f"有 {len(failed_pairs)} 組日期查詢失敗（可能被 Google 暫時擋住），結果不完整："
+                              + "、".join(f"{fmt_day(a)}～{fmt_day(b)}" for a, b in failed_pairs))
+            log("⚠ " + core.FAIL_NOTE)
         name = f"{'示範_' if demo else ''}機票比價_{core.出發地}-{core.目的地}_{datetime.now():%m%d_%H%M}.xlsx"
         try:
             core.write_excel(results, pairs, name)

@@ -203,6 +203,7 @@ def lenient_entry(e, code_to_name):
     )
 
 
+FAIL_NOTE = ""  # 有日期查詢失敗時的說明（結果不完整）
 NOTES = []  # 查詢過程中的提醒（例如 Google 沒給價格的航班），網頁版會顯示在結果下方
 
 
@@ -292,21 +293,31 @@ def nap(seconds):
         time.sleep(0.2)
 
 
-def polite_call(fn, *args):
-    """查詢 + 自動重試 + 間隔"""
-    for attempt in range(3):
+class 查詢失敗(Exception):
+    """重試好幾次都失敗（可能被 Google 暫時擋住）"""
+
+
+def polite_call(fn, *args, strict=False):
+    """查詢 + 自動重試 + 間隔。strict=True 時，全部失敗會丟出「查詢失敗」，不會當成沒有航班"""
+    waits = [10, 25, 45]
+    last = None
+    for attempt in range(len(waits) + 1):
         if should_stop():
             raise 已停止()
         try:
             res = fn(*args)
         except Exception as e:
-            wait = 8 * (attempt + 1)
-            print(f"      ⚠ 查詢失敗（{type(e).__name__}: {str(e)[:60]}），{wait} 秒後重試…")
-            nap(wait)
+            last = e
+            if attempt < len(waits):
+                print(f"      ⚠ 查詢失敗（{type(e).__name__}: {str(e)[:60]}），{waits[attempt]} 秒後重試…")
+                nap(waits[attempt])
             continue
         nap(每次查詢間隔秒數 + random.random())
         return res
-    print("      ✗ 放棄這一筆，Excel 裡會是空的")
+    if strict:
+        print("      ✗ 重試好幾次都失敗")
+        raise 查詢失敗(f"{type(last).__name__}: {str(last)[:80]}")
+    print("      ✗ 放棄這一筆")
     return []
 
 
@@ -456,7 +467,7 @@ def _key(f):
 def get_flights_complete(q):
     """第一階段（網頁一打開的航班）＋第二階段（網頁之後再載入的完整清單，依價格排序），合併起來"""
     from fast_flights import get_flights
-    flights = list(polite_call(get_flights, q) or [])
+    flights = list(polite_call(get_flights, q, strict=True) or [])
     if not 補抓完整清單:
         return flights
     try:

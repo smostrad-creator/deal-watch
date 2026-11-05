@@ -149,7 +149,9 @@ def resend(p):
                   "\n\n請到 Google Flights 查看價格。")
     head = (f"✈️ <b>{html.escape(route_name(P))}　查詢結果</b>" if first
             else f"🔄 <b>{html.escape(route_name(P))}　已依你選的航空更新</b>")
+    fail = R.get("failNote") or ""
     msg = (head + f"\n只看：{html.escape(pick_txt)}\n\n" +
+           (f"⚠️ {html.escape(fail)}\n\n" if fail else "") +
            ("\n".join(lines) if lines else "選的航空公司沒有有價格的航班") +
            (f"\n\n⚠️ 另有 {len(notes)} 家航空查不到價格，沒有列入" + ("（見上一則）" if first else "") if notes else "") +
            ("\n\n📊 完整比價表：打開查詢頁看「最近結果」"))
@@ -227,7 +229,8 @@ def main():
             lines = [f"{i}. {lab}　{html.escape(a)}　<b>{fmtp(pv)}</b>" for i, (pv, lab, a) in enumerate(best[:5], 1)]
             head = f"共 {len(data['pairs'])} 組日期"
 
-        out.update(notes=notes, file=xfile, error=None)
+        fail = getattr(core, "FAIL_NOTE", "") or ""
+        out.update(notes=notes, file=xfile, error=None, failNote=fail)
         names = [a["name"] for a in out.get("summary") or []]
         if len(names) > 1:
             # 先不傳結果：等使用者在查詢頁選好航空公司，按「確定」後才傳（只傳一次）
@@ -235,6 +238,7 @@ def main():
                 json.dump(out, f, ensure_ascii=False)
             send_text(f"✅ <b>{html.escape(route_name(p))}　查完了</b>\n"
                       f"找到 {len(names)} 家航空公司" + (f"，另有 {len(notes)} 家查不到價格" if notes else "") + "。\n\n"
+                      + (f"⚠️ {html.escape(fail)}\n\n" if fail else "")
                       + "👉 請回到查詢頁，選擇要比較的航空公司。\n"
                       + "選好後，才會傳完整結果和 Excel 給你。")
             print("✓ 完成，等使用者選航空公司")
@@ -249,6 +253,7 @@ def main():
                       "\n".join("⚠️ <b>" + html.escape(n.split("：")[0]) + "</b>" for n in notes) +
                       "\n\n請到 Google Flights 查看價格。")
         msg = (f"✈️ <b>{html.escape(route_name(p))}　查詢完成</b>\n{head}\n\n" +
+               (f"⚠️ {html.escape(fail)}\n\n" if fail else "") +
                ("\n".join(lines) if lines else "沒有找到有價格的航班") +
                (f"\n\n⚠️ 另有 {len(notes)} 家航空查不到價格（見上一則）" if notes else "") +
                ("\n\n📊 完整比價表：打開查詢頁看「最近結果」"))
