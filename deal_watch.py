@@ -219,6 +219,15 @@ def read_body(item):
     return item["body"]
 
 
+def is_domestic_body(item):
+    """標題沒有國外地名，內文提到國內線／離島，而且內文也沒有國外地名 → 視為國內線"""
+    if any(w in item["title"] for w in INTL_WORDS):
+        return False
+    body = item.get("body") or ""
+    dom = any(w in body for w in DOMESTIC_WORDS) or any(w in body for w in PACKAGE_WORDS)
+    return dom and not any(w in body for w in INTL_WORDS)
+
+
 def check_detail(item):
     """點進去看內文，有價格就把那句話放進 item['detail']；回傳 True/False"""
     sent = price_sentence(read_body(item))
@@ -438,8 +447,10 @@ def check_reminders(reminders):
         if now > start + timedelta(hours=1):
             continue  # 過期了
         base_title = r["title"].split("（")[0]
-        if any(w in base_title for w in EXCLUDE_WORDS + PROMO_EXCLUDE):
-            continue  # 舊的提醒裡如果有股票、抽獎這類，不傳、直接丟掉
+        if (any(w in base_title for w in EXCLUDE_WORDS + PROMO_EXCLUDE + PACKAGE_WORDS)
+                or "{" in r["title"] or "@context" in r["title"] or "http" in r["title"]
+                or deal_level(base_title) == "no"):
+            continue  # 舊版留下的錯誤提醒（股票、抽獎、亂碼…），不傳、直接丟掉
         if not r.get("sent") and now >= start - timedelta(minutes=REMIND_BEFORE + 15):
             left = int((start - now).total_seconds() // 60)
             head = f"⏰ <b>{left} 分鐘後開搶！</b>" if left > 0 else "⏰ <b>已經開搶了，快去搶！</b>"
@@ -550,6 +561,13 @@ def main():
         read_body(it)
         budget -= 1
         time.sleep(1)
+    # 標題沒寫國外地名、內文卻是國內線（離島、本島）或套裝行程的，不推
+    for k in list(found):
+        it = found[k]
+        if is_domestic_body(it):
+            log(f"  ✗ 內文是國內線或套裝行程，不推：{it['title'][:24]}…")
+            seen.append(it["id"])
+            del found[k]
 
     new = sorted(found.values(), key=lambda x: x["pub"] or datetime.min.replace(tzinfo=TW), reverse=True)
     log(f"新的促銷消息：{len(new)} 則")
