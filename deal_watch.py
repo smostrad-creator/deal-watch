@@ -195,20 +195,55 @@ def price_sentence(text):
     return None
 
 
-def check_detail(item):
-    """點進去看內文，有價格就把那句話放進 item['detail']；回傳 True/False"""
+def read_body(item):
+    """點進新聞讀內文，存在 item['body']；讀不到回傳空字串"""
+    if "body" in item:
+        return item["body"]
+    item["body"] = ""
     try:
         url = decode_google_news(item["link"]) or item["link"]
-        if "news.google.com" in url:
-            return False
-        sent = price_sentence(article_text(url))
-        if sent:
-            item["detail"] = sent
+        if "news.google.com" not in url:
+            item["body"] = article_text(url)
             item["link"] = url
-            return True
     except Exception as e:
         log(f"  讀內文失敗：{item['title'][:20]}…（{type(e).__name__}）")
+    return item["body"]
+
+
+def check_detail(item):
+    """點進去看內文，有價格就把那句話放進 item['detail']；回傳 True/False"""
+    sent = price_sentence(read_body(item))
+    if sent:
+        item["detail"] = sent
+        return True
     return False
+
+
+SALE_KEYS = ["開賣", "開搶", "銷售", "搶購", "開放購票", "開放訂位", "起跑", "登場", "限時", "快閃", "上架"]
+
+
+def body_sale_times(text, pub):
+    """從內文找出開賣時間：有「開賣、銷售期間…」的句子裡的日期時間。回傳 [(時間, 是否推測, 說明)]"""
+    out, have = [], set()
+    for sent in re.split(r"[。！\n]", text or ""):
+        pos = [sent.find(k) for k in SALE_KEYS if k in sent]
+        if not pos:
+            continue
+        # 只看「開賣、銷售」前後那一段；「出發、旅遊、回程」之後的日期是搭機日期，不是開賣日期
+        cut = len(sent)
+        for w in ("出發", "旅遊", "回程", "適用", "搭乘", "飛行期間", "航班日期"):
+            i = sent.find(w, min(pos))
+            if i != -1:
+                cut = min(cut, i)
+        sent = sent[:cut]
+        st = parse_start(sent, pub)
+        if not st or st[0] in have:
+            continue
+        have.add(st[0])
+        ctx = re.sub(r"\s+", "", sent)
+        ctx = ctx[:46] + ("…" if len(ctx) > 46 else "")
+        out.append((st[0], st[1], ctx))
+    return out[:3]
 
 
 def is_promo(item):
@@ -251,12 +286,10 @@ def parse_start(title, pub):
             d = date(yr, mo, dd)
         except ValueError:
             return None
-    elif re.search(r"明[早天日晚(]|明\d", t):
-        d = base.date() + timedelta(days=1)
-    elif "後天" in t:
-        d = base.date() + timedelta(days=2)
-    elif re.search(r"今[早天日晚(]|今\d", t):
-        d = base.date()
+    elif re.search(r"明[早天日晚(]|明\d|後天|今[早天日晚(]|今\d", t):
+        # 有好幾個（例如「今天上午10時至明天晚上」）時，以最先出現的為準
+        m2 = re.search(r"明[早天日晚(]|明\d|後天|今[早天日晚(]|今\d", t).group(0)
+        d = base.date() + timedelta(days=2 if m2 == "後天" else 1 if m2.startswith("明") else 0)
     else:
         guessed = True
         d = base.date()
@@ -320,16 +353,16 @@ def fmt(item):
     out = (f"✈️ <b>{html.escape(item['title'])}</b>\n"
            f"<i>{html.escape(meta)}</i>\n"
            + (f"💰 {html.escape(item['detail'])}\n" if item.get("detail") else ""))
-    st = item.get("start")
-    if st:
-        start, guessed = st
+    links = []
+    for start, guessed, ctx in item.get("starts") or []:
+        note = f"\n　　<i>{html.escape(ctx)}</i>" if ctx else ""
         if start > datetime.now(TW):
-            out += f"⏰ 開搶：<b>{fmt_time(start)}</b>" + ("（從標題推測）" if guessed else "") + \
-                   f"　會在 {REMIND_BEFORE} 分鐘前提醒你\n" + \
-                   f"<a href=\"{html.escape(calendar_link(item, start))}\">📅 加到 Google 行事曆</a>　"
+            out += (f"⏰ 開搶：<b>{fmt_time(start)}</b>" + ("（推測）" if guessed else "") +
+                    f"　會在 {REMIND_BEFORE} 分鐘前提醒你{note}\n")
+            links.append(f"<a href=\"{html.escape(calendar_link(item, start))}\">📅 {start.month}/{start.day} 加到行事曆</a>")
         else:
-            out += f"🔥 已在 {fmt_time(start)} 開賣\n"
-    return out + f"<a href=\"{html.escape(item['link'])}\">看新聞</a>"
+            out += f"🔥 已在 {fmt_time(start)} 開賣{note}\n"
+    return out + "　".join(links + [f"<a href=\"{html.escape(item['link'])}\">看新聞</a>"])
 
 
 def send_batches(header, items):
@@ -392,6 +425,16 @@ def main():
         else:
             seen.append(it["id"])  # 內文也沒價格：記起來，下次不用再點
         time.sleep(1)
+    # 標題就符合的，也點進去看內文，找內文裡的開賣時間（例如標題寫這波、內文預告下一波）
+    budget = MAX_DETAIL
+    for it in sorted(found.values(), key=lambda x: x["pub"] or datetime.min.replace(tzinfo=TW), reverse=True):
+        if "body" in it:
+            continue
+        if budget <= 0:
+            break
+        read_body(it)
+        budget -= 1
+        time.sleep(1)
 
     new = sorted(found.values(), key=lambda x: x["pub"] or datetime.min.replace(tzinfo=TW), reverse=True)
     log(f"新的促銷消息：{len(new)} 則")
@@ -399,13 +442,21 @@ def main():
     # 找開搶時間，加入提醒清單（同一個開搶時間＋相同航空只提醒一次）
     have = {(r["start"], r["title"][:6]) for r in reminders}
     for it in new:
+        starts = []
         st = parse_start(it["title"], it["pub"])
-        it["start"] = st
-        if st and st[0] > now:
-            key = (st[0].isoformat(), it["title"][:6])
-            if key not in have:
-                reminders.append({"title": it["title"], "link": it["link"], "start": st[0].isoformat(), "sent": False})
-                have.add(key)
+        if st:
+            starts.append((st[0], st[1], ""))
+        for t2, g2, ctx in body_sale_times(it.get("body"), it["pub"]):
+            if all(abs((t2 - x[0]).total_seconds()) > 60 for x in starts):
+                starts.append((t2, g2, ctx))
+        it["starts"] = starts
+        for t2, g2, ctx in starts:
+            if t2 > now:
+                key = (t2.isoformat(), it["title"][:6])
+                if key not in have:
+                    reminders.append({"title": it["title"] + (f"（{ctx}）" if ctx else ""), "link": it["link"],
+                                      "start": t2.isoformat(), "sent": False})
+                    have.add(key)
 
     if failed == len(keywords) and keywords:
         send_telegram("⚠️ 特價快報這次查詢全部失敗，可能是暫時連不上新聞來源。下次會自動再試。")
