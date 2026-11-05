@@ -87,6 +87,10 @@ def search_news(keyword):
 PRICE_RE = re.compile(r"\d+\s*萬\s*\d*\s*元|\d[\d,]*\s*元|\d{3,}[\d,]*\s*起|\d{1,2}(\.\d)?\s*折|[0-9]+\s*TWD|NT\$\s*\d")
 TIME_RE = re.compile(r"\d{1,2}\s*[點時]|\d{1,2}:\d{2}|\d{1,2}/\d{1,2}|\d{1,2}月\d{1,2}[日號]|[今明]\s*\(?\d{0,2}\)?\s*[日天早晚]")
 SALE_WORDS = ["開賣", "開搶", "搶票", "快閃", "限時", "秒殺"]
+# 標題有這些字就不推（航空公司的股票、財報新聞也會有「元」和日期，要排除）
+EXCLUDE_WORDS = ["股", "台股", "漲停", "跌停", "收盤", "盤中", "外資", "投信", "自營商", "營收", "財報", "EPS",
+                 "獲利", "法說", "除息", "配息", "股利", "目標價", "市值", "本益比", "貨運", "運價", "航空貨",
+                 "罷工", "訂單", "飛機引擎", "機隊", "交機", "季報", "年報", "盈餘", "虧損", "淨利"]
 
 
 def is_ticket_deal(t):
@@ -95,6 +99,8 @@ def is_ticket_deal(t):
 
 def deal_level(t):
     """yes＝標題就符合；maybe＝有機票和開賣時間、但標題沒寫價格（要點進去看內文）；no＝不符合"""
+    if any(w in t for w in EXCLUDE_WORDS):
+        return "no"
     flight = any(w in t for w in FLIGHT_WORDS)
     price = bool(PRICE_RE.search(t))
     when = bool(TIME_RE.search(t)) or any(w in t for w in SALE_WORDS)
@@ -156,7 +162,8 @@ def article_text(url):
 def price_sentence(text):
     """找出有價格的那一句（最多 70 個字）"""
     for sent in re.split(r"[。！\n]", text):
-        if PRICE_RE.search(sent) and any(w in sent for w in ("元", "折", "NT", "TWD")):
+        if (PRICE_RE.search(sent) and any(w in sent for w in ("元", "折", "NT", "TWD"))
+                and not any(w in sent for w in ("股", "營收", "獲利", "EPS", "市值"))):
             sent = sent.strip()
             m = PRICE_RE.search(sent)
             start = max(0, m.start() - 35)
