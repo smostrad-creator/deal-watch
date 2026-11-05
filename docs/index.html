@@ -29,6 +29,8 @@ body{font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,san
 .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
 .ver{font-size:13px;font-weight:400;color:var(--muted);margin-left:8px}
 .toprow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.topbtns{margin-left:auto;display:flex;gap:6px;align-items:center}.topbtns .link{font-size:14px}.gearbtn{border:1px solid var(--line);background:var(--surface);font-size:18px;width:40px;height:40px}
+.note{white-space:pre-line}
+.log{color:var(--ink)}
 h1{font-size:22px;margin:0 0 18px;font-weight:700;letter-spacing:.02em}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
 .route{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end;margin-bottom:16px}
@@ -1165,6 +1167,7 @@ const GH = {
   token: localStorage.getItem('gh_token') || '',
 };
 let currentRun = null, currentReq = null, runStart = 0, estimateMin = 3, pollTimer = null;
+const LEAVE_TIP = '⚠️ 請先不要關掉頁面，查完要選航空公司，選好才會傳結果到 Telegram。\n（不小心關掉也沒關係，查完 Telegram 會通知你回來選。）';
 
 async function gh(path, opts = {}){
   const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}${path}`, {
@@ -1212,7 +1215,7 @@ async function startSearch(body){
   runStart = Date.now(); currentRun = null;
   $('goBtn').disabled = true; $('goBtn').textContent = '查詢中…'; $('progress').hidden = false;
   $('stopBtn').hidden = false; $('stopBtn').disabled = false; $('stopBtn').textContent = '■ 停止';
-  $('log').textContent = '已送出，等 GitHub 開始執行…（查完 Telegram 也會收到通知，可以先關掉這個頁面）';
+  $('log').textContent = '已送出，等 GitHub 開始執行…\n' + LEAVE_TIP;
   $('barFill').style.width = '3%';
   clearTimeout(pollTimer); pollTimer = setTimeout(pollRun, 4000);
 }
@@ -1231,7 +1234,7 @@ async function pollRun(){
   $('barFill').style.width = Math.min(95, mins / estimateMin * 100) + '%';
   if (!currentRun || currentRun.status !== 'completed') {
     const st = !currentRun ? '等 GitHub 開始…' : currentRun.status === 'queued' ? '排隊中…' : '查詢中…';
-    $('log').textContent = `${st}已經過 ${Math.floor(mins)} 分 ${Math.round((mins % 1) * 60)} 秒，預估約 ${estimateMin} 分鐘。\n查完 Telegram 也會收到通知，可以先關掉這個頁面。`;
+    $('log').textContent = `${st}已經過 ${Math.floor(mins)} 分 ${Math.round((mins % 1) * 60)} 秒，預估約 ${estimateMin} 分鐘。\n` + LEAVE_TIP;
     pollTimer = setTimeout(pollRun, 5000); return;
   }
   done(); $('barFill').style.width = '100%';
@@ -1281,7 +1284,37 @@ function applyChoice(pick){
   else render(filterNormal(lastResult.data, pick), lastFile);
   showBanner(lastResult.notes);
 }
-$('al-go').onclick = () => { const pick = alPicked(); if (!pick.length) return; closeAl(); applyChoice(pick); };
+function askAirlines(){
+  const A = lastAsk.airlines, sel = new Set(chosen || A.map(a => a.name));
+  $('al-hint').textContent = lastResult && lastResult.sentAirlines
+    ? `共找到 ${A.length} 家航空公司。改選後按「確定」，會把更新的結果再傳到 Telegram。`
+    : `共找到 ${A.length} 家航空公司。勾選要比較的，按「確定」後才會把結果和 Excel 傳到 Telegram。`;
+  $('al-list').innerHTML = A.map(a => `<label><input type="checkbox" value="${esc(a.name)}" ${sel.has(a.name) ? 'checked' : ''}>` +
+    `<span class="n">${esc(a.name)}</span><span class="pr">${a.price != null ? '最低 ' + fmt(a.price) : '<span class="hint">價格未提供</span>'}</span><span class="c">${a.count} ${lastAsk.kind === 'scan' ? '天' : '組'}有班機</span></label>`).join('');
+  alCount();
+  $('al').hidden = false; document.body.style.overflow = 'hidden'; $('al-go').focus();
+}
+$('al-go').onclick = () => {
+  const pick = alPicked(); if (!pick.length) return;
+  closeAl(); applyChoice(pick);
+  const sent = lastResult.sentAirlines;
+  const same = sent && pick.length === sent.length && pick.every(a => sent.includes(a));
+  if (!same) resendTelegram(pick);
+};
+async function resendTelegram(pick){
+  if (!GH.token || !lastResult || !lastResult.reqId) return;
+  const box = $('note');
+  try {
+    const r = await gh('/actions/workflows/search.yml/dispatches', {method: 'POST',
+      body: JSON.stringify({ref: 'main', inputs: {params: JSON.stringify({action: 'resend', reqId: lastResult.reqId, airlines: pick})}})});
+    if (r.status !== 204) throw new Error(`GitHub 回應 ${r.status}`);
+    lastResult.sentAirlines = pick;
+    box.textContent = `📤 已經把結果（${pick.length} 家航空）送去 Telegram，大約 30 秒～1 分鐘後會收到，Excel 也會一起傳。\n✅ 現在可以關掉頁面了。之後想改選，再回來按「更改航空公司」就好。`;
+  } catch (e) {
+    box.textContent = '傳到 Telegram 失敗：' + e.message;
+  }
+  box.hidden = false;
+}
 
 $('stopBtn').onclick = async () => {
   $('stopBtn').disabled = true; $('stopBtn').textContent = '停止中…';
