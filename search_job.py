@@ -152,7 +152,7 @@ def resend(p):
     msg = (head + f"\n只看：{html.escape(pick_txt)}\n\n" +
            ("\n".join(lines) if lines else "選的航空公司沒有有價格的航班") +
            (f"\n\n⚠️ 另有 {len(notes)} 家航空查不到價格，沒有列入" + ("（見上一則）" if first else "") if notes else "") +
-           (f"\n\n📊 <a href=\"{page}#results\">打開完整比價表</a>" if page else ""))
+           ("\n\n📊 完整比價表：打開查詢頁看「最近結果」"))
     send_text(msg)
     if xok:
         send_file(os.path.join(OUT, "latest.xlsx"), "比價 Excel")
@@ -235,7 +235,7 @@ def main():
                 json.dump(out, f, ensure_ascii=False)
             send_text(f"✅ <b>{html.escape(route_name(p))}　查完了</b>\n"
                       f"找到 {len(names)} 家航空公司" + (f"，另有 {len(notes)} 家查不到價格" if notes else "") + "。\n\n"
-                      + (f"👉 <a href=\"{page}#results\">點這裡選擇要比較的航空公司</a>\n" if page else "")
+                      + "👉 請回到查詢頁，選擇要比較的航空公司。\n"
                       + "選好後，才會傳完整結果和 Excel 給你。")
             print("✓ 完成，等使用者選航空公司")
             return
@@ -251,7 +251,7 @@ def main():
         msg = (f"✈️ <b>{html.escape(route_name(p))}　查詢完成</b>\n{head}\n\n" +
                ("\n".join(lines) if lines else "沒有找到有價格的航班") +
                (f"\n\n⚠️ 另有 {len(notes)} 家航空查不到價格（見上一則）" if notes else "") +
-               (f"\n\n📊 <a href=\"{page}#results\">打開完整比價表</a>" if page else ""))
+               ("\n\n📊 完整比價表：打開查詢頁看「最近結果」"))
         send_text(msg)
         if xfile:
             send_file(os.path.join(OUT, xfile), "完整比價 Excel")
