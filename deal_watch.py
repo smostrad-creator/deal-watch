@@ -83,11 +83,113 @@ def search_news(keyword):
     return items
 
 
+# 推播條件：標題要「同時」有 ① 跟機票有關 ② 價格 ③ 開賣時間或開賣字眼
+PRICE_RE = re.compile(r"\d+\s*萬\s*\d*\s*元|\d[\d,]*\s*元|\d{3,}[\d,]*\s*起|\d{1,2}(\.\d)?\s*折|[0-9]+\s*TWD|NT\$\s*\d")
+TIME_RE = re.compile(r"\d{1,2}\s*[點時]|\d{1,2}:\d{2}|\d{1,2}/\d{1,2}|\d{1,2}月\d{1,2}[日號]|[今明]\s*\(?\d{0,2}\)?\s*[日天早晚]")
+SALE_WORDS = ["開賣", "開搶", "搶票", "快閃", "限時", "秒殺"]
+
+
+def is_ticket_deal(t):
+    return deal_level(t) == "yes"
+
+
+def deal_level(t):
+    """yes＝標題就符合；maybe＝有機票和開賣時間、但標題沒寫價格（要點進去看內文）；no＝不符合"""
+    flight = any(w in t for w in FLIGHT_WORDS)
+    price = bool(PRICE_RE.search(t))
+    when = bool(TIME_RE.search(t)) or any(w in t for w in SALE_WORDS)
+    if flight and when:
+        return "yes" if price else "maybe"
+    return "no"
+
+
+# ── 讀內文：標題沒寫價格時，點進新聞找價格 ──
+MAX_DETAIL = 10   # 每次最多點進去幾篇
+UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"
+
+
+def http_get(url, data=None, headers=None, timeout=20):
+    req = urllib.request.Request(url, data=data, headers={"User-Agent": UA, **(headers or {})})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read(800_000).decode("utf-8", "ignore"), r.geturl()
+
+
+def decode_google_news(link):
+    """Google 新聞的連結是加密轉址，這裡解開成真正的新聞網址；失敗回傳 None"""
+    m = re.search(r"/articles/([^?/]+)", link)
+    if not m:
+        return None
+    gid = m.group(1)
+    page, _ = http_get(f"https://news.google.com/rss/articles/{gid}")
+    sg = re.search(r'data-n-a-sg="([^"]+)"', page)
+    ts = re.search(r'data-n-a-ts="([^"]+)"', page)
+    if not sg or not ts:
+        return None
+    inner = ('["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],'
+             f'"X","X",1,[1,1,1],1,1,null,0,0,null,0],"{gid}",{ts.group(1)},"{sg.group(1)}"]')
+    body = urllib.parse.urlencode({"f.req": json.dumps([[["Fbv4je", inner, None, "generic"]]])}).encode()
+    txt, _ = http_get("https://news.google.com/_/DotsSplashUi/data/batchexecute", data=body,
+                      headers={"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"})
+    for line in txt.splitlines():
+        if line.startswith("[[") and "garturlres" in line:
+            arr = json.loads(line)
+            return json.loads(arr[0][2])[1]
+    return None
+
+
+def article_text(url):
+    """讀新聞網頁的摘要和開頭幾段"""
+    page, _ = http_get(url)
+    parts = []
+    for pat in (r'<meta[^>]+property="og:description"[^>]+content="([^"]+)"',
+                r'<meta[^>]+name="description"[^>]+content="([^"]+)"'):
+        m = re.search(pat, page)
+        if m:
+            parts.append(html.unescape(m.group(1)))
+    for p in re.findall(r"<p[^>]*>(.*?)</p>", page, flags=re.S)[:12]:
+        t = html.unescape(re.sub(r"<[^>]+>", "", p)).strip()
+        if len(t) > 15:
+            parts.append(t)
+    return "\n".join(parts)
+
+
+def price_sentence(text):
+    """找出有價格的那一句（最多 70 個字）"""
+    for sent in re.split(r"[。！\n]", text):
+        if PRICE_RE.search(sent) and any(w in sent for w in ("元", "折", "NT", "TWD")):
+            sent = sent.strip()
+            m = PRICE_RE.search(sent)
+            start = max(0, m.start() - 35)
+            return ("…" if start else "") + sent[start:start + 70] + ("…" if len(sent) > start + 70 else "")
+    return None
+
+
+def check_detail(item):
+    """點進去看內文，有價格就把那句話放進 item['detail']；回傳 True/False"""
+    try:
+        url = decode_google_news(item["link"]) or item["link"]
+        if "news.google.com" in url:
+            return False
+        sent = price_sentence(article_text(url))
+        if sent:
+            item["detail"] = sent
+            item["link"] = url
+            return True
+    except Exception as e:
+        log(f"  讀內文失敗：{item['title'][:20]}…（{type(e).__name__}）")
+    return False
+
+
 def is_promo(item):
     if item["pub"] and item["pub"] < datetime.now(TW) - timedelta(days=MAX_AGE_DAYS):
         return False
-    t = item["title"]
-    return any(w in t for w in PROMO_WORDS) and any(w in t for w in FLIGHT_WORDS)
+    return deal_level(item["title"]) == "yes"
+
+
+def promo_level(item):
+    if item["pub"] and item["pub"] < datetime.now(TW) - timedelta(days=MAX_AGE_DAYS):
+        return "no"
+    return deal_level(item["title"])
 
 
 WEEK = "一二三四五六日"
@@ -185,7 +287,8 @@ def fmt(item):
     when = item["pub"].strftime("%m/%d %H:%M") if item["pub"] else ""
     meta = "　".join(x for x in (item["source"], when) if x)
     out = (f"✈️ <b>{html.escape(item['title'])}</b>\n"
-           f"<i>{html.escape(meta)}</i>\n")
+           f"<i>{html.escape(meta)}</i>\n"
+           + (f"💰 {html.escape(item['detail'])}\n" if item.get("detail") else ""))
     st = item.get("start")
     if st:
         start, guessed = st
@@ -230,18 +333,34 @@ def main():
     seen_set = set(seen)
 
     keywords = load_keywords()
-    found, failed = {}, 0
+    found, maybe, failed = {}, {}, 0
     for kw in keywords:
         try:
             for it in search_news(kw):
-                if it["id"] not in seen_set and is_promo(it):
-                    # 不同關鍵字搜到同一則，只算一次（用標題判斷）
+                if it["id"] in seen_set:
+                    continue
+                lv = promo_level(it)
+                # 不同關鍵字搜到同一則，只算一次（用標題判斷）
+                if lv == "yes":
                     found.setdefault(it["title"], it)
+                elif lv == "maybe":
+                    maybe.setdefault(it["title"], it)
             log(f"✓ {kw}")
         except Exception as e:
             failed += 1
             log(f"✗ {kw}：{e}")
         time.sleep(1.5)
+
+    # 標題沒寫價格的，點進去看內文（最新的優先，最多 MAX_DETAIL 篇）
+    cands = sorted((v for k, v in maybe.items() if k not in found),
+                   key=lambda x: x["pub"] or datetime.min.replace(tzinfo=TW), reverse=True)[:MAX_DETAIL]
+    for it in cands:
+        if check_detail(it):
+            found[it["title"]] = it
+            log(f"  ✓ 內文有價格：{it['title'][:24]}…")
+        else:
+            seen.append(it["id"])  # 內文也沒價格：記起來，下次不用再點
+        time.sleep(1)
 
     new = sorted(found.values(), key=lambda x: x["pub"] or datetime.min.replace(tzinfo=TW), reverse=True)
     log(f"新的促銷消息：{len(new)} 則")
