@@ -86,7 +86,7 @@ def search_news(keyword):
 
 # 推播條件：標題要「同時」有 ① 跟機票有關 ② 價格 ③ 開賣時間或開賣字眼
 PRICE_RE = re.compile(r"\d+\s*萬\s*\d*\s*元|\d[\d,]*\s*元|\d{3,}[\d,]*\s*起|\d{1,2}(\.\d)?\s*折|[0-9]+\s*TWD|NT\$\s*\d")
-TIME_RE = re.compile(r"\d{1,2}\s*[點時]|\d{1,2}:\d{2}|\d{1,2}/\d{1,2}|\d{1,2}月\d{1,2}[日號]|[今明]\s*\(?\d{0,2}\)?\s*[日天早晚]")
+TIME_RE = re.compile(r"(?<![\d.,])\d{1,2}\s*[點時]|\d{1,2}:\d{2}|\d{1,2}/\d{1,2}|\d{1,2}月\d{1,2}[日號]|[今明]\s*\(?\d{0,2}\)?\s*[日天早晚]")
 SALE_WORDS = ["開賣", "開搶", "搶票", "快閃", "限時", "秒殺"]
 # 標題一定要有其中一家航空公司的名字（只寫「機票」的，常常是抽獎、刷卡活動）
 AIRLINE_WORDS = ["虎航", "樂桃", "酷航", "捷星", "亞航", "亞洲航空", "越捷", "濟州航", "真航空", "易斯達", "德威",
@@ -371,11 +371,11 @@ WEEK = "一二三四五六日"
 def parse_start(title, pub):
     """從標題找出開搶時間。回傳 (datetime, 是否用猜的)；找不到回傳 None"""
     t = title.replace("：", ":").replace("（", "(").replace("）", ")")
-    m = re.search(r"(上午|早上|中午|下午|晚上|晚間|凌晨|早)?\s*(\d{1,2}):(\d{2})", t)
+    m = re.search(r"(上午|早上|中午|下午|晚上|晚間|凌晨|早)?\s*(?<!\d)(\d{1,2}):(\d{2})", t)
     if m:
         ap, h, mi = m.group(1), int(m.group(2)), int(m.group(3))
     else:
-        m = re.search(r"(上午|早上|中午|下午|晚上|晚間|凌晨|早)?\s*(\d{1,2})\s*[點時](半)?", t)
+        m = re.search(r"(上午|早上|中午|下午|晚上|晚間|凌晨|早)?\s*(?<![\d.,])(\d{1,2})\s*[點時](半)?", t)
         if not m:
             return None
         ap, h, mi = m.group(1), int(m.group(2)), 30 if m.group(3) else 0
@@ -437,6 +437,9 @@ def check_reminders(reminders):
             continue
         if now > start + timedelta(hours=1):
             continue  # 過期了
+        base_title = r["title"].split("（")[0]
+        if any(w in base_title for w in EXCLUDE_WORDS + PROMO_EXCLUDE):
+            continue  # 舊的提醒裡如果有股票、抽獎這類，不傳、直接丟掉
         if not r.get("sent") and now >= start - timedelta(minutes=REMIND_BEFORE + 15):
             left = int((start - now).total_seconds() // 60)
             head = f"⏰ <b>{left} 分鐘後開搶！</b>" if left > 0 else "⏰ <b>已經開搶了，快去搶！</b>"
