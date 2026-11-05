@@ -88,6 +88,17 @@ def search_news(keyword):
 PRICE_RE = re.compile(r"\d+\s*萬\s*\d*\s*元|\d[\d,]*\s*元|\d{3,}[\d,]*\s*起|\d{1,2}(\.\d)?\s*折|[0-9]+\s*TWD|NT\$\s*\d")
 TIME_RE = re.compile(r"\d{1,2}\s*[點時]|\d{1,2}:\d{2}|\d{1,2}/\d{1,2}|\d{1,2}月\d{1,2}[日號]|[今明]\s*\(?\d{0,2}\)?\s*[日天早晚]")
 SALE_WORDS = ["開賣", "開搶", "搶票", "快閃", "限時", "秒殺"]
+# 標題一定要有其中一家航空公司的名字（只寫「機票」的，常常是抽獎、刷卡活動）
+AIRLINE_WORDS = ["虎航", "樂桃", "酷航", "捷星", "亞航", "亞洲航空", "越捷", "濟州航", "真航空", "易斯達", "德威",
+                 "釜山航空", "Aero K", "香港快運", "香港航空", "國泰", "獅航", "宿霧太平洋", "星宇", "長榮", "華航",
+                 "中華航空", "華信", "立榮", "大韓航空", "韓亞", "日航", "日本航空", "全日空", "ANA", "JAL",
+                 "春秋航空", "吉祥航空", "泰國航空", "泰航", "越南航空", "越航", "新加坡航空", "新航", "馬航",
+                 "菲律賓航空", "菲航", "阿聯酋", "卡達航空", "土耳其航空", "聯合航空", "達美", "美國航空", "加航",
+                 "澳航", "紐西蘭航空", "漢莎", "法航", "荷航", "英航", "澳門航空", "Peach", "Scoot", "Jetstar",
+                 "AirAsia", "Tigerair", "STARLUX", "EVA Air", "酷鳥"]
+# 抽獎、信用卡、里程這類活動不推
+PROMO_EXCLUDE = ["抽獎", "抽機票", "抽出", "抽中", "抽送", "抽好禮", "好禮", "聯名卡", "信用卡", "刷卡", "里程", "集點",
+                 "點數", "會員日送", "留言", "分享抽", "轉發"]
 # 台灣國內線（離島、東部）的字眼
 DOMESTIC_WORDS = ["離島", "國內線", "澎湖", "馬公", "金門", "馬祖", "南竿", "北竿", "七美", "望安",
                   "蘭嶼", "綠島", "台東", "臺東", "花蓮", "恆春", "本島"]
@@ -109,12 +120,12 @@ def is_ticket_deal(t):
 
 def deal_level(t):
     """yes＝標題就符合；maybe＝有機票和開賣時間、但標題沒寫價格（要點進去看內文）；no＝不符合"""
-    if any(w in t for w in EXCLUDE_WORDS):
+    if any(w in t for w in EXCLUDE_WORDS) or any(w in t for w in PROMO_EXCLUDE):
         return "no"
     # 只要國際線：有台灣國內地名、又沒有國外地名的，不推
     if any(w in t for w in DOMESTIC_WORDS) and not any(w in t for w in INTL_WORDS):
         return "no"
-    flight = any(w in t for w in FLIGHT_WORDS)
+    flight = any(w in t for w in AIRLINE_WORDS)
     price = bool(PRICE_RE.search(t))
     when = bool(TIME_RE.search(t)) or any(w in t for w in SALE_WORDS)
     if flight and when:
