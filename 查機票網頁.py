@@ -39,7 +39,7 @@ except ImportError:
     input("按 Enter 結束")
     sys.exit(1)
 
-VERSION = "11/5 版 b（分清楚查詢失敗）"
+VERSION = "11/5 版 c（空結果也補查）"
 週 = "一二三四五六日"
 MAX_PAIRS = 26
 MAX_SCAN = 120

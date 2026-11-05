@@ -467,6 +467,7 @@ def _key(f):
 
 # ── 備用來源：SerpApi（被 Google 擋住時才用）──
 SERP_USED = 0          # 這次執行用了幾次 SerpApi
+EMPTY_CONFIRMED = 0    # 這次執行確認「真的沒航班」的天數
 SERP_MAX = int(os.environ.get("SERPAPI_MAX", "40"))  # 每次執行最多用幾次，避免一次用光每月額度
 
 
@@ -532,15 +533,35 @@ def serpapi_flights(q):
 def get_flights_complete(q):
     """第一階段（網頁一打開的航班）＋第二階段（網頁之後再載入的完整清單，依價格排序），合併起來。
     被 Google 擋住（或全部沒價格）時，改用備用來源 SerpApi"""
+    global EMPTY_CONFIRMED
     from fast_flights import get_flights
+
+    def fetch_once():
+        return list(get_flights(q) or [])
+
     try:
-        flights = list(polite_call(get_flights, q, strict=True) or [])
-        if flights and not any(f.price for f in flights):
-            raise 查詢失敗("有航班但全部沒有價格（可能被半擋）")
+        flights = polite_call(fetch_once, strict=True)
     except 查詢失敗:
         alt = serpapi_flights(q)
         if alt is None:
             raise
+        return alt
+    if not any(f.price for f in flights):
+        # 空的結果、或有航班但全部沒價格：常常是 Google「半擋」，不一定真的沒航班
+        if EMPTY_CONFIRMED >= 2:
+            return flights  # 這次已經確認過好幾天真的沒航班（冷門航線），不再浪費額度
+        why = "Google 回傳空的結果" if not flights else "有航班但全部沒有價格"
+        print(f"      ⚠ {why}（可能被半擋），15 秒後重查一次…")
+        nap(15)
+        again = polite_call(fetch_once) or []
+        if any(f.price for f in again):
+            return again
+        alt = serpapi_flights(q)
+        if alt is None:
+            raise 查詢失敗(why)
+        if not any(f.price for f in alt):
+            EMPTY_CONFIRMED += 1
+            print("      ℹ 備用來源也說沒有航班，確定這天真的沒有")
         return alt
     if not 補抓完整清單:
         return flights
