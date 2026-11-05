@@ -74,8 +74,98 @@ def route_name(p):
 
 
 # ─────────────── 主程式 ───────────────
+def build_top_lines(R, keep):
+    """依選定的航空公司，排出前 5 名的文字"""
+    if R["kind"] == "scan":
+        E = sorted((e for e in R["entries"] if e["airline"] in keep), key=lambda e: e["price"])
+        return [f"{i}. {e['d1label']}～{e['d2label']}　{html.escape(e['airline'])}　<b>{fmtp(e['price'])}</b>"
+                for i, e in enumerate(E[:5], 1)]
+    best = sorted((x["best"], pr["label"].replace("\n", ""), a)
+                  for pr in R["data"]["pairs"] for a, x in pr["airlines"].items()
+                  if a in keep and x["best"] is not None)
+    return [f"{i}. {lab}　{html.escape(a)}　<b>{fmtp(v)}</b>" for i, (v, lab, a) in enumerate(best[:5], 1)]
+
+
+def excel_from_json(R, keep, path):
+    """用存下來的結果，只留選定的航空公司，重新做一份 Excel（不用重新查詢）"""
+    from datetime import date
+    core.NOTES[:] = R.get("notes") or []
+    p = R.get("params") or {}
+    core.出發地, core.目的地 = p.get("origin", ""), p.get("dest", "")
+    core.STOP_TXT = {"0": "直飛", "1": "最多轉 1 次"}.get(str(p.get("stops")), "可轉機")
+    if R["kind"] == "scan":
+        E = sorted((e for e in R["entries"] if e["airline"] in keep), key=lambda e: e["price"])
+        top = [{**e, "retOk": True} for e in E[:10]]
+        best = {}
+        for e in E:
+            best.setdefault(e["d1"], e)
+        cal = [{**d, "price": best[d["d"]]["price"] if d["d"] in best else None,
+                "airline": best[d["d"]]["airline"] if d["d"] in best else ""} for d in R["dayList"]]
+        core.write_scan_excel(top, cal, path)
+        return
+    results, pairs = [], []
+    for pr in R["data"]["pairs"]:
+        if "d1" not in pr:
+            raise RuntimeError("這次的結果太舊，請重新查詢一次")
+        outs, rets, rel, picked = {}, {}, {}, {}
+        for a, x in pr["airlines"].items():
+            if a not in keep:
+                continue
+            outs[a] = [{"text": o["text"], "price": o["price"]} for o in x["outs"]]
+            rets[a] = [{"text": r["text"], "price": r["price"]} for r in x["rets"]]
+            rel[a] = x.get("reliable", True)
+            star = [o["text"] for o in x["outs"] if o.get("star")]
+            if star:
+                picked[a] = star[0]
+        results.append((outs, rets, rel, picked, [], pr["url"]))
+        pairs.append((date.fromisoformat(pr["d1"]), date.fromisoformat(pr["d2"])))
+    core.write_excel(results, pairs, path)
+
+
+def resend(p):
+    """查詢頁選好航空公司後：用上次的結果，只留選的航空，重新傳到 Telegram（不重新查詢）"""
+    path = os.path.join(OUT, "latest.json")
+    R = json.load(open(path, encoding="utf-8"))
+    if R.get("reqId") != p.get("reqId"):
+        send_text("⚠️ 這份結果已經被新的查詢取代，請在查詢頁重新選一次航空公司。")
+        return
+    keep = list(p.get("airlines") or [])
+    P = R.get("params") or {}
+    lines = build_top_lines(R, set(keep))
+    try:
+        excel_from_json(R, set(keep), os.path.join(OUT, "latest.xlsx"))
+        xok = True
+    except Exception as e:
+        print("Excel 重做失敗：", e)
+        xok = False
+    page = os.environ.get("PAGES_URL", "")
+    notes = R.get("notes") or []
+    first = not R.get("sentAirlines")
+    allnames = [a["name"] for a in R.get("summary") or []]
+    pick_txt = "全部航空" if set(keep) >= set(allnames) else "、".join(keep)
+    if first and notes:
+        send_text("🚨 <b>注意！有航空公司查不到價格</b>\n這些航空有飛，但 Google 沒給價格，<b>沒有列進比價表</b>，可能更便宜：\n\n" +
+                  "\n".join("⚠️ <b>" + html.escape(n.split("：")[0]) + "</b>" for n in notes) +
+                  "\n\n請到 Google Flights 查看價格。")
+    head = (f"✈️ <b>{html.escape(route_name(P))}　查詢結果</b>" if first
+            else f"🔄 <b>{html.escape(route_name(P))}　已依你選的航空更新</b>")
+    msg = (head + f"\n只看：{html.escape(pick_txt)}\n\n" +
+           ("\n".join(lines) if lines else "選的航空公司沒有有價格的航班") +
+           (f"\n\n⚠️ 另有 {len(notes)} 家航空查不到價格，沒有列入" + ("（見上一則）" if first else "") if notes else "") +
+           (f"\n\n📊 <a href=\"{page}#results\">打開完整比價表</a>" if page else ""))
+    send_text(msg)
+    if xok:
+        send_file(os.path.join(OUT, "latest.xlsx"), "比價 Excel")
+    R["sentAirlines"] = keep
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(R, f, ensure_ascii=False)
+    print("✓ 已傳送")
+
+
 def main():
     p = json.loads(os.environ.get("SEARCH_PARAMS") or "{}")
+    if p.get("action") == "resend":
+        return resend(p)
     req = p.get("reqId", "")
     page = os.environ.get("PAGES_URL", "")
     os.makedirs(OUT, exist_ok=True)
@@ -122,6 +212,8 @@ def main():
             head = f"每天出發、玩 {res['days']} 天，共 {len(days)} 個出發日"
         else:
             data = res
+            for pr, (d1, d2) in zip(data["pairs"], web.cache.get("pairs", [])):
+                pr["d1"], pr["d2"] = d1.isoformat(), d2.isoformat()
             out.update(kind="normal", data=data,
                        summary=st["ask"]["airlines"] if st.get("ask") else
                        web.airline_summary([(a, x["best"], i) for i, pr in enumerate(data["pairs"])
@@ -136,6 +228,18 @@ def main():
             head = f"共 {len(data['pairs'])} 組日期"
 
         out.update(notes=notes, file=xfile, error=None)
+        names = [a["name"] for a in out.get("summary") or []]
+        if len(names) > 1:
+            # 先不傳結果：等使用者在查詢頁選好航空公司，按「確定」後才傳（只傳一次）
+            with open(os.path.join(OUT, "latest.json"), "w", encoding="utf-8") as f:
+                json.dump(out, f, ensure_ascii=False)
+            send_text(f"✅ <b>{html.escape(route_name(p))}　查完了</b>\n"
+                      f"找到 {len(names)} 家航空公司" + (f"，另有 {len(notes)} 家查不到價格" if notes else "") + "。\n\n"
+                      + (f"👉 <a href=\"{page}#results\">點這裡選擇要比較的航空公司</a>\n" if page else "")
+                      + "選好後，才會傳完整結果和 Excel 給你。")
+            print("✓ 完成，等使用者選航空公司")
+            return
+        out["sentAirlines"] = names
         with open(os.path.join(OUT, "latest.json"), "w", encoding="utf-8") as f:
             json.dump(out, f, ensure_ascii=False)
 
