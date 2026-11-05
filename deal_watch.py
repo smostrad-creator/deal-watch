@@ -315,6 +315,41 @@ def dispatch_sale_check(chk, rnd):
         return False
 
 
+SALE_AFTER = (15, 75)   # 開賣後幾分鐘加查
+WAIT_WINDOW = 80        # 接下來幾分鐘內有事情要做，就留著等，時間到準時做
+
+
+def upcoming_events(reminders):
+    """接下來要準時做的事（提醒、加查）的時間"""
+    now = datetime.now(TW)
+    out = []
+    for r in reminders:
+        start = datetime.fromisoformat(r["start"])
+        if r.get("kind") == "sale":
+            for rnd, after in ((1, SALE_AFTER[0]), (2, SALE_AFTER[1])):
+                if rnd not in r.get("done", []):
+                    out.append(start + timedelta(minutes=after))
+        elif not r.get("sent"):
+            out.append(start - timedelta(minutes=REMIND_BEFORE))
+    return sorted(t for t in out if now < t <= now + timedelta(minutes=WAIT_WINDOW))
+
+
+def wait_and_fire(reminders):
+    """等到時間整點準時提醒／加查，最多等 WAIT_WINDOW 分鐘"""
+    deadline = datetime.now(TW) + timedelta(minutes=WAIT_WINDOW + 5)
+    while datetime.now(TW) < deadline:
+        ev = upcoming_events(reminders)
+        if not ev or ev[0] > deadline:
+            return reminders  # 太久以後的，交給下一次執行
+        wait = (ev[0] - datetime.now(TW)).total_seconds()
+        log(f"⏳ 等 {int(wait // 60)} 分 {int(wait % 60)} 秒，到 {ev[0]:%H:%M} 準時提醒或加查…")
+        time.sleep(max(1, wait) + 2)
+        reminders = check_reminders(reminders)
+        run_sale_checks(reminders)
+        save_json(REMIND_FILE, reminders)
+    return reminders
+
+
 def run_sale_checks(reminders):
     """開賣後 20 分鐘、80 分鐘各加查一次"""
     now = datetime.now(TW)
@@ -323,7 +358,7 @@ def run_sale_checks(reminders):
             continue
         start = datetime.fromisoformat(r["start"])
         done = r.setdefault("done", [])
-        for rnd, after in ((1, 20), (2, 80)):
+        for rnd, after in ((1, SALE_AFTER[0]), (2, SALE_AFTER[1])):
             if rnd not in done and now >= start + timedelta(minutes=after) and now < start + timedelta(hours=4):
                 if dispatch_sale_check(r, rnd):
                     done.append(rnd)
@@ -451,8 +486,8 @@ def check_reminders(reminders):
                 or "{" in r["title"] or "@context" in r["title"] or "http" in r["title"]
                 or deal_level(base_title) == "no"):
             continue  # 舊版留下的錯誤提醒（股票、抽獎、亂碼…），不傳、直接丟掉
-        if not r.get("sent") and now >= start - timedelta(minutes=REMIND_BEFORE + 15):
-            left = int((start - now).total_seconds() // 60)
+        if not r.get("sent") and now >= start - timedelta(minutes=REMIND_BEFORE + 1):
+            left = round((start - now).total_seconds() / 60)
             head = f"⏰ <b>{left} 分鐘後開搶！</b>" if left > 0 else "⏰ <b>已經開搶了，快去搶！</b>"
             send_telegram(f"{head}\n✈️ {html.escape(r['title'])}\n開搶時間：{fmt_time(start)}"
                           f"\n<a href=\"{html.escape(r['link'])}\">看新聞</a>")
@@ -518,6 +553,8 @@ def main():
     if not due:
         log("這次只檢查提醒，不搜尋新聞。")
         save_json(REMIND_FILE, reminders)
+        if "--test" not in sys.argv:
+            save_json(REMIND_FILE, wait_and_fire(reminders))
         return
     seen = [] if first_run else load_json(SEEN_FILE, [])
     seen_set = set(seen)
@@ -622,6 +659,7 @@ def main():
     seen = list(dict.fromkeys(seen))[-KEEP_SEEN:]
     save_json(SEEN_FILE, seen)
     save_json(REMIND_FILE, reminders)
+    save_json(REMIND_FILE, wait_and_fire(reminders))
 
 
 def save_json(path, data):
