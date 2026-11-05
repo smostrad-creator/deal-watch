@@ -1221,6 +1221,7 @@ async function gh(path, opts = {}){
               'X-GitHub-Api-Version': '2022-11-28', ...(opts.body ? {'Content-Type': 'application/json'} : {})},
   });
   if (r.status === 401) throw new Error('通行碼（token）不對或過期了，請按右上角 ⚙️ 重新設定。');
+  if (r.status === 404 && opts.allow404) return r;  // 檔案還不存在（例如第一次加追蹤），是正常的
   if (r.status === 403 || r.status === 404) throw new Error('通行碼的權限不夠，或專案名稱不對，請按右上角 ⚙️ 檢查。');
   return r;
 }
@@ -1380,7 +1381,7 @@ const COMMON_AIRLINES = ['台灣虎航','長榮航空','中華航空','星宇航
 const b64enc = s => { const b = new TextEncoder().encode(s); let t = ''; b.forEach(c => t += String.fromCharCode(c)); return btoa(t); };
 const b64dec = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, '')), c => c.charCodeAt(0)));
 async function getFile(path){
-  const r = await gh(`/contents/${encodeURIComponent(path)}?ref=main`);
+  const r = await gh(`/contents/${encodeURIComponent(path)}?ref=main`, {allow404: true});
   if (r.status === 404) return {data: null, sha: null};
   const j = await r.json();
   return {data: JSON.parse(b64dec(j.content)), sha: j.sha};
