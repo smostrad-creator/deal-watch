@@ -185,7 +185,7 @@ def article_text(url):
     return "\n".join(parts)
 
 
-PACKAGE_WORDS = ["自由行", "天1夜", "天2夜", "天3夜", "天4夜", "機加酒", "套裝", "團費", "跟團", "住宿", "飯店", "旅行社"]
+PACKAGE_WORDS = ["團費", "跟團", "團體旅遊"]  # 跟團行程不推；自由行、機加酒可以
 
 
 def price_sentence(text):
@@ -226,6 +226,99 @@ def check_detail(item):
         item["detail"] = sent
         return True
     return False
+
+
+# ── 特價開賣後加查（叫降價追蹤去查）──
+AIRLINE_CODE = {"台灣虎航": "IT", "虎航": "IT", "樂桃": "MM", "酷航": "TR", "捷星": "GK", "亞航": "AK", "亞洲航空": "AK",
+                "越捷": "VJ", "濟州航": "7C", "真航空": "LJ", "易斯達": "ZE", "德威": "TW", "釜山航空": "BX",
+                "香港快運": "UO", "香港航空": "HX", "國泰": "CX", "泰國獅": "SL", "獅航": "SL", "宿霧太平洋": "5J",
+                "星宇": "JX", "長榮": "BR", "華航": "CI", "中華航空": "CI", "華信": "AE", "立榮": "B7",
+                "大韓航空": "KE", "韓亞": "OZ", "日本航空": "JL", "日航": "JL", "全日空": "NH", "越南航空": "VN",
+                "越航": "VN", "泰國航空": "TG", "泰航": "TG", "新加坡航空": "SQ", "新航": "SQ", "菲律賓航空": "PR"}
+AIRLINE_FULL = {"IT": "台灣虎航", "MM": "樂桃航空", "TR": "酷航", "GK": "捷星日本航空", "AK": "亞洲航空", "VJ": "越捷航空",
+                "7C": "濟州航空", "LJ": "真航空", "ZE": "易斯達航空", "TW": "德威航空", "BX": "釜山航空", "UO": "香港快運航空",
+                "HX": "香港航空", "CX": "國泰航空", "SL": "泰國獅子航空", "5J": "宿霧太平洋航空", "JX": "星宇航空",
+                "BR": "長榮航空", "CI": "中華航空", "AE": "華信航空", "B7": "立榮航空", "KE": "大韓航空", "OZ": "韓亞航空",
+                "JL": "日本航空", "NH": "全日空", "VN": "越南航空", "TG": "泰國國際航空", "SQ": "新加坡航空", "PR": "菲律賓航空"}
+CITY_CODE = {"台北": "TPE", "臺北": "TPE", "桃園": "TPE", "松山": "TSA", "台中": "RMQ", "臺中": "RMQ", "高雄": "KHH",
+             "台南": "TNN", "臺南": "TNN",
+             "東京": "NRT", "成田": "NRT", "羽田": "HND", "大阪": "KIX", "關西": "KIX", "名古屋": "NGO", "福岡": "FUK",
+             "沖繩": "OKA", "那霸": "OKA", "札幌": "CTS", "北海道": "CTS", "函館": "HKD", "旭川": "AKJ", "仙台": "SDJ",
+             "新潟": "KIJ", "茨城": "IBR", "富山": "TOY", "小松": "KMQ", "靜岡": "FSZ", "岡山": "OKJ", "廣島": "HIJ",
+             "高松": "TAK", "熊本": "KMJ", "鹿兒島": "KOJ", "宮崎": "KMI", "大分": "OIT", "長崎": "NGS", "佐賀": "HSG",
+             "米子": "YGJ", "石垣島": "ISG", "石垣": "ISG", "宮古島": "SHI", "青森": "AOJ", "秋田": "AXT", "花卷": "HNA",
+             "首爾": "ICN", "仁川": "ICN", "釜山": "PUS", "濟州": "CJU", "大邱": "TAE", "清州": "CJJ",
+             "曼谷": "BKK", "清邁": "CNX", "普吉": "HKT", "峴港": "DAD", "河內": "HAN", "胡志明": "SGN", "芽莊": "CXR",
+             "富國島": "PQC", "宿霧": "CEB", "馬尼拉": "MNL", "克拉克": "CRK", "新加坡": "SIN", "吉隆坡": "KUL",
+             "檳城": "PEN", "澳門": "MFM", "香港": "HKG", "關島": "GUM", "帛琉": "ROR", "峇里島": "DPS"}
+ROUTE_RE = re.compile(r"(" + "|".join(sorted(CITY_CODE, key=len, reverse=True)) + r")\s*[-－–—到飛至⇄↔]\s*(" +
+                      "|".join(sorted(CITY_CODE, key=len, reverse=True)) + r")\s*(?:單程|來回)?\s*(\d[\d,]*)?\s*元?")
+
+
+def sale_info(item):
+    """從標題和內文找出：哪家航空、哪些航線（和新聞價格）、優惠的出發期間"""
+    text = item["title"] + "\n" + (item.get("body") or "")
+    code = ""
+    for k in sorted(AIRLINE_CODE, key=len, reverse=True):
+        if k in item["title"]:
+            code = AIRLINE_CODE[k]
+            break
+    routes, have = [], set()
+    for m in ROUTE_RE.finditer(text):
+        a, b = CITY_CODE[m.group(1)], CITY_CODE[m.group(2)]
+        if a == b or (a, b) in have or a not in ("TPE", "TSA", "RMQ", "KHH", "TNN"):
+            continue
+        have.add((a, b))
+        routes.append({"from": a, "to": b, "fromName": m.group(1), "toName": m.group(2),
+                       "price": int(m.group(3).replace(",", "")) if m.group(3) else None})
+    travel = None
+    pub = item["pub"] or datetime.now(TW)
+    m = re.search(r"(?:出發|旅遊|搭乘)(?:區間|期間|日期)?自?\s*(明年)?(\d{1,2})月(\d{1,2})日\s*(?:\S{0,4})?\s*至\s*(明年)?(\d{1,2})月(\d{1,2})日", text)
+    if m:
+        def mk(nexty, mo, dd):
+            y = pub.year + (1 if nexty or int(mo) < pub.month - 1 else 0)
+            try:
+                return date(y, int(mo), int(dd)).isoformat()
+            except ValueError:
+                return None
+        travel = [mk(m.group(1), m.group(2), m.group(3)), mk(m.group(4) or m.group(1), m.group(5), m.group(6))]
+    return {"airline": AIRLINE_FULL.get(code, ""), "code": code, "routes": routes[:4], "travel": travel or [None, None]}
+
+
+def dispatch_sale_check(chk, rnd):
+    """叫 GitHub 執行「降價追蹤」的特價加查"""
+    token, repo = os.environ.get("GITHUB_TOKEN"), os.environ.get("GITHUB_REPOSITORY")
+    if not token or not repo:
+        log("（沒有 GITHUB_TOKEN，略過特價加查）")
+        return False
+    payload = {k: chk[k] for k in ("airline", "code", "routes", "travel", "title")}
+    payload["round"] = rnd
+    body = json.dumps({"ref": "main", "inputs": {"sale": json.dumps(payload, ensure_ascii=False)}}).encode()
+    req = urllib.request.Request(f"https://api.github.com/repos/{repo}/actions/workflows/track.yml/dispatches", data=body,
+                                 headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+                                          "Content-Type": "application/json"})
+    try:
+        urllib.request.urlopen(req, timeout=20).read()
+        log(f"已叫降價追蹤加查（第 {rnd} 次）：{chk['title'][:20]}…")
+        return True
+    except Exception as e:
+        log(f"特價加查失敗：{e}")
+        return False
+
+
+def run_sale_checks(reminders):
+    """開賣後 20 分鐘、80 分鐘各加查一次"""
+    now = datetime.now(TW)
+    for r in reminders:
+        if r.get("kind") != "sale":
+            continue
+        start = datetime.fromisoformat(r["start"])
+        done = r.setdefault("done", [])
+        for rnd, after in ((1, 20), (2, 80)):
+            if rnd not in done and now >= start + timedelta(minutes=after) and now < start + timedelta(hours=4):
+                if dispatch_sale_check(r, rnd):
+                    done.append(rnd)
+                break
 
 
 SALE_KEYS = ["開賣", "開搶", "銷售", "搶購", "開放購票", "開放訂位", "限時", "快閃", "上架"]
@@ -338,6 +431,10 @@ def check_reminders(reminders):
     keep = []
     for r in reminders:
         start = datetime.fromisoformat(r["start"])
+        if r.get("kind") == "sale":
+            if now <= start + timedelta(hours=4):
+                keep.append(r)
+            continue
         if now > start + timedelta(hours=1):
             continue  # 過期了
         if not r.get("sent") and now >= start - timedelta(minutes=REMIND_BEFORE + 15):
@@ -399,6 +496,7 @@ def main():
         return
 
     reminders = check_reminders(load_json(REMIND_FILE, []))
+    run_sale_checks(reminders)
 
     first_run = not os.path.exists(SEEN_FILE)
     now = datetime.now(TW)
@@ -455,6 +553,7 @@ def main():
 
     # 找開搶時間，加入提醒清單（同一個開搶時間＋相同航空只提醒一次）
     have = {(r["start"], r["title"][:6]) for r in reminders}
+    have |= {("sale", r["start"], r.get("code")) for r in reminders if r.get("kind") == "sale"}
     for it in new:
         starts = []
         st = parse_start(it["title"], it["pub"])
@@ -464,8 +563,14 @@ def main():
             if all(abs((t2 - x[0]).total_seconds()) > 60 for x in starts):
                 starts.append((t2, g2, ctx))
         it["starts"] = starts
+        info = None
         for t2, g2, ctx in starts:
             if t2 > now:
+                info = info or sale_info(it)
+                skey = ("sale", t2.isoformat(), info["code"])
+                if info["code"] and skey not in have:
+                    reminders.append({"kind": "sale", "start": t2.isoformat(), "title": it["title"], **info})
+                    have.add(skey)
                 key = (t2.isoformat(), it["title"][:6])
                 if key not in have:
                     reminders.append({"title": it["title"] + (f"（{ctx}）" if ctx else ""), "link": it["link"],
