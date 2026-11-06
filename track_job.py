@@ -20,6 +20,7 @@ WEEK = "一二三四五六日"
 
 sys.path.insert(0, HERE)
 import 查機票 as core  # noqa: E402
+import tiger  # noqa: E402  虎航官網每日最低價
 
 core.print = lambda *a, **k: print(*a, flush=True)
 from search_job import send_text, fmtp  # noqa: E402  共用 Telegram 傳送
@@ -108,6 +109,38 @@ def setup_core(t):
     core.補查沒價格的航班 = False
 
 
+def tiger_ok_for(t):
+    """這條追蹤要不要查虎航官網：全部航空、或有勾台灣虎航，而且是台灣出發"""
+    return ((not t.get("airlines")) or "台灣虎航" in t["airlines"]) and t["origin"] in tiger.TW_STATIONS
+
+
+def tiger_line(tb):
+    total, d1, d2, a, b = tb
+    return (f"🐯 虎航官網起價：<b>{fmtp(total)}</b>（未稅來回）"
+            f"\n　　去 {dlabel(d1)} {fmtp(a)}、回 {dlabel(d2)} {fmtp(b)}")
+
+
+def check_tiger(t, s, pairs, route, notify=True):
+    """查虎航官網的未稅來回起價，降價就通知；回傳要附在訊息裡的文字（或空字串）"""
+    if not tiger_ok_for(t):
+        return ""
+    tb = tiger.round_trip(t["origin"], t["dest"], pairs)
+    if tb is None:
+        return ""
+    ts = s.setdefault("tiger", {})
+    last = ts.get("last")
+    total = tb[0]
+    if notify and last is not None and total < last:
+        send_text(f"🐯 <b>虎航官網降價了！</b>\n{route}\n{fmtp(last)} → <b>{fmtp(total)}</b>（降 NT${last - total:,}，未稅來回）"
+                  f"\n去 {dlabel(tb[1])} {fmtp(tb[3])}、回 {dlabel(tb[2])} {fmtp(tb[4])}"
+                  + (f"\n虎航官網最低紀錄：{fmtp(min(total, ts.get('min') or total))}") +
+                  "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
+    ts.update(last=total, d1=tb[1].isoformat(), d2=tb[2].isoformat(), at=datetime.now(TW).strftime("%m/%d %H:%M"))
+    if ts.get("min") is None or total < ts["min"]:
+        ts["min"] = total
+    return tiger_line(tb)
+
+
 def cheapest(t, pairs):
     """查每組日期，回傳全部裡面最便宜的一筆；全部查詢都失敗回傳 None"""
     keep = set(t.get("airlines") or [])
@@ -167,9 +200,61 @@ def cheapest_oneway(frm, to, dates):
     return best
 
 
+def tiger_sale_check(sale, tracks, state):
+    """虎航特價：直接看虎航官網的每日最低價（未稅單程起價）"""
+    after = sale.get("after")
+    when = f"開賣後 {after} 分鐘" if after else f"第 {sale.get('round', 1)} 次"
+    lines = [f"🐯 <b>虎航官網價格檢查</b>（{when}）", f"<i>{html.escape(sale.get('title', '')[:60])}</i>"]
+    tomorrow = date.today() + timedelta(days=1)
+    a, b = sale.get("travel") or [None, None]
+    a = max(date.fromisoformat(a), tomorrow) if a else tomorrow
+    b = date.fromisoformat(b) if b else a + timedelta(days=180)
+    # A. 你的追蹤
+    mine = [t for t in tracks if t.get("active", True) and not state.get(t["id"], {}).get("expired") and tiger_ok_for(t)]
+    if mine:
+        lines.append("\n<b>你的追蹤</b>（未稅來回起價）")
+    for t in mine[:8]:
+        s = state.setdefault(t["id"], {})
+        before = (s.get("tiger") or {}).get("last")
+        tb = tiger.round_trip(t["origin"], t["dest"], pairs_of(t))
+        name = html.escape(route_of(t))
+        if tb is None:
+            lines.append(f"・{name}：" + ("虎航官網暫時抓不到資料" if not tiger.ok(t["origin"], t["dest"]) else "這些日期虎航沒有票價"))
+            continue
+        total = tb[0]
+        diff = "" if before is None else (f"　📉 降 NT${before - total:,}" if total < before else "　沒有變便宜" if total == before else f"　漲 NT${total - before:,}")
+        lines.append(f"・{name}：<b>{fmtp(total)}</b>（去 {dlabel(tb[1])} {fmtp(tb[3])}、回 {dlabel(tb[2])} {fmtp(tb[4])}）{diff}")
+        ts = s.setdefault("tiger", {})
+        ts.update(last=total, d1=tb[1].isoformat(), d2=tb[2].isoformat(), at=datetime.now(TW).strftime("%m/%d %H:%M"))
+        if ts.get("min") is None or total < ts["min"]:
+            ts["min"] = total
+    # B. 新聞裡的特價航線
+    routes = sale.get("routes") or []
+    if routes:
+        lines.append(f"\n<b>新聞裡的特價航線</b>（單程未稅起價，出發 {dlabel(a)}～{dlabel(b)}）")
+    for r in routes[:6]:
+        days = {d: p for d, p in tiger.daily(r["from"], r["to"]).items() if a.isoformat() <= d <= b.isoformat()}
+        label = f"{html.escape(r.get('fromName') or tiger.name(r['from']))} → {html.escape(r.get('toName') or tiger.name(r['to']))}"
+        news = f"　新聞 {r['price']:,} 元起" if r.get("price") else ""
+        if not days:
+            lines.append(f"・{label}：" + ("虎航官網暫時抓不到資料" if not tiger.ok(r["from"], r["to"]) else "這段期間沒有票價") + news)
+            continue
+        low = min(days.values())
+        dates = sorted(d for d, p in days.items() if p == low)
+        show = "、".join(dlabel(date.fromisoformat(d)) for d in dates[:5]) + (f" 等 {len(dates)} 天" if len(dates) > 5 else "")
+        hit = "　✅ 有特價" if r.get("price") and low <= r["price"] else ""
+        lines.append(f"・{label}：最低 <b>{fmtp(low)}</b>　{show}{news}{hit}")
+    lines.append("\n<i>這是虎航官網的單人未稅起價，結帳會再加稅金；要輸入優惠碼的折扣這裡看不到。</i>"
+                 "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
+    if mine or routes:
+        send_text("\n".join(lines))
+
+
 def sale_check(sale, tracks, state):
     """特價開賣後加查：A. 你的追蹤裡跟這家航空有關的；B. 新聞裡提到的特價航線"""
     airline, code = sale.get("airline", ""), sale.get("code", "")
+    if code == "IT":
+        return tiger_sale_check(sale, tracks, state)
     rnd = sale.get("round", 1)
     lines = [f"🔍 <b>{html.escape(airline)}特價開賣後檢查</b>（第 {rnd} 次）",
              f"<i>{html.escape(sale.get('title', '')[:60])}</i>"]
@@ -264,6 +349,8 @@ def main():
             continue
         print(f"▶ {route_of(t)}　{dates_desc(t)}　共 {len(pairs)} 組")
         setup_core(t)
+        # 虎航官網（不受 Google 擋不擋影響，先查）
+        tline = check_tiger(t, s, pairs, route, notify=(s.get("tiger") or {}).get("last") is not None)
         best = cheapest(t, pairs)
         checked += 1
         s["lastCheck"] = now.strftime("%m/%d %H:%M")
@@ -285,8 +372,9 @@ def main():
         new_min = s.get("min") is None or price < s["min"]
 
         if last is None:
-            send_text(f"👀 <b>開始追蹤</b>：{route}\n{html.escape(dates_desc(t))}\n\n目前最低：<b>{fmtp(price)}</b>\n{line}\n\n"
-                      f"通知方式：{html.escape(notify_desc(n))}" + link)
+            send_text(f"👀 <b>開始追蹤</b>：{route}\n{html.escape(dates_desc(t))}\n\n目前最低：<b>{fmtp(price)}</b>（Google Flights 含稅）\n{line}\n"
+                      + (f"\n{tline}\n" if tline else "") +
+                      f"\n通知方式：{html.escape(notify_desc(n))}" + link)
         else:
             msg = None
             diff = price - last

@@ -20,6 +20,7 @@ TW = timezone(timedelta(hours=8))
 
 sys.path.insert(0, HERE)
 import 查機票網頁 as web  # noqa: E402  電腦版的網頁程式（裡面有完整的查詢流程）
+import tiger  # noqa: E402  虎航官網每日最低價
 
 core = web.core
 core.print = lambda *a, **k: print(*a, flush=True)
@@ -74,6 +75,47 @@ def route_name(p):
 
 
 # ─────────────── 主程式 ───────────────
+def tiger_section(p, kind):
+    """虎航官網的未稅來回起價（只有台灣出發、虎航有飛的航線才有）；抓不到就回傳 ok=False，比價表照常用 Google"""
+    o, d = p.get("origin"), p.get("dest")
+    if o not in tiger.TW_STATIONS:
+        return None
+    try:
+        if kind == "scan":
+            pairs = [(a, b) for a, b, _ in web.cache.get("day_list", [])]
+        else:
+            pairs = list(web.cache.get("pairs", []))
+        out, back = tiger.daily(o, d), tiger.daily(d, o)
+    except Exception as e:
+        print("虎航官網失敗：", e)
+        return {"ok": False}
+    if not tiger.ok(o, d):
+        return {"ok": False}
+    if not out and not back:
+        return None  # 虎航沒飛這條航線
+    rows = []
+    for a, b in pairs:
+        x, y = out.get(a.isoformat()), back.get(b.isoformat())
+        if x and y:
+            rows.append({"d1": a.isoformat(), "d2": b.isoformat(), "label": f"{web.fmt_day(a)}～{web.fmt_day(b)}",
+                         "total": x + y, "out": x, "ret": y})
+    return {"ok": True, "rows": rows}
+
+
+def tiger_line(R):
+    tg = R.get("tiger")
+    if not tg:
+        return ""
+    if not tg.get("ok"):
+        return "\n\n🐯 虎航官網暫時抓不到，以上是 Google Flights 的價格"
+    rows = sorted(tg.get("rows") or [], key=lambda r: r["total"])
+    if not rows:
+        return ""
+    b = rows[0]
+    return (f"\n\n🐯 <b>虎航官網最低：{fmtp(b['total'])}</b>（未稅來回）\n"
+            f"{b['label']}　去 {fmtp(b['out'])}、回 {fmtp(b['ret'])}\n<i>未稅價，結帳會再加稅金，不能直接跟上面的含稅價比</i>")
+
+
 def build_top_lines(R, keep):
     """依選定的航空公司，排出前 5 名的文字"""
     if R["kind"] == "scan":
@@ -154,6 +196,7 @@ def resend(p):
            (f"⚠️ {html.escape(fail)}\n\n" if fail else "") +
            ("\n".join(lines) if lines else "選的航空公司沒有有價格的航班") +
            (f"\n\n⚠️ 另有 {len(notes)} 家航空查不到價格，沒有列入" + ("（見上一則）" if first else "") if notes else "") +
+           (tiger_line(R) if ("台灣虎航" in keep or set(keep) >= set(allnames)) else "") +
            ("\n\n📊 完整比價表：打開查詢頁看「最近結果」"))
     send_text(msg)
     if xok:
@@ -233,6 +276,7 @@ def main():
         serp = getattr(core, "SERP_USED", 0)
         serp_txt = f"ℹ️ 有 {serp} 組被 Google 擋住，改用備用來源（SerpApi）查到。\n\n" if serp else ""
         out.update(notes=notes, file=xfile, error=None, failNote=fail, serpUsed=serp)
+        out["tiger"] = tiger_section(p, out.get("kind"))
         names = [a["name"] for a in out.get("summary") or []]
         if len(names) > 1:
             # 先不傳結果：等使用者在查詢頁選好航空公司，按「確定」後才傳（只傳一次）
@@ -258,6 +302,7 @@ def main():
                (f"⚠️ {html.escape(fail)}\n\n" if fail else "") + serp_txt +
                ("\n".join(lines) if lines else "沒有找到有價格的航班") +
                (f"\n\n⚠️ 另有 {len(notes)} 家航空查不到價格（見上一則）" if notes else "") +
+               tiger_line(out) +
                ("\n\n📊 完整比價表：打開查詢頁看「最近結果」"))
         send_text(msg)
         if xfile:

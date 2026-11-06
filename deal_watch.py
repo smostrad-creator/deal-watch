@@ -294,7 +294,7 @@ def sale_info(item):
     return {"airline": AIRLINE_FULL.get(code, ""), "code": code, "routes": routes[:4], "travel": travel or [None, None]}
 
 
-def dispatch_sale_check(chk, rnd):
+def dispatch_sale_check(chk, rnd, after=None):
     """叫 GitHub 執行「降價追蹤」的特價加查"""
     token, repo = os.environ.get("GITHUB_TOKEN"), os.environ.get("GITHUB_REPOSITORY")
     if not token or not repo:
@@ -302,6 +302,7 @@ def dispatch_sale_check(chk, rnd):
         return False
     payload = {k: chk[k] for k in ("airline", "code", "routes", "travel", "title")}
     payload["round"] = rnd
+    payload["after"] = after
     body = json.dumps({"ref": "main", "inputs": {"sale": json.dumps(payload, ensure_ascii=False)}}).encode()
     req = urllib.request.Request(f"https://api.github.com/repos/{repo}/actions/workflows/track.yml/dispatches", data=body,
                                  headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
@@ -315,7 +316,14 @@ def dispatch_sale_check(chk, rnd):
         return False
 
 
-SALE_AFTER = (15, 75)   # 開賣後幾分鐘加查
+SALE_AFTER = (15, 75)   # 開賣後幾分鐘加查（一般航空，用 Google Flights）
+TIGER_AFTER = (1, 15, 30, 60)  # 虎航：直接看官網價格，開賣後 1、15、30、60 分鐘
+
+
+def sale_rounds(r):
+    """這筆特價要在開賣後第幾分鐘加查：[(第幾次, 幾分鐘), ...]"""
+    mins = TIGER_AFTER if r.get("code") == "IT" else SALE_AFTER
+    return list(enumerate(mins, 1))
 WAIT_WINDOW = 80        # 接下來幾分鐘內有事情要做，就留著等，時間到準時做
 
 
@@ -326,7 +334,7 @@ def upcoming_events(reminders):
     for r in reminders:
         start = datetime.fromisoformat(r["start"])
         if r.get("kind") == "sale":
-            for rnd, after in ((1, SALE_AFTER[0]), (2, SALE_AFTER[1])):
+            for rnd, after in sale_rounds(r):
                 if rnd not in r.get("done", []):
                     out.append(start + timedelta(minutes=after))
         elif not r.get("sent"):
@@ -358,11 +366,12 @@ def run_sale_checks(reminders):
             continue
         start = datetime.fromisoformat(r["start"])
         done = r.setdefault("done", [])
-        for rnd, after in ((1, SALE_AFTER[0]), (2, SALE_AFTER[1])):
-            if rnd not in done and now >= start + timedelta(minutes=after) and now < start + timedelta(hours=4):
-                if dispatch_sale_check(r, rnd):
-                    done.append(rnd)
-                break
+        due = [(rnd, after) for rnd, after in sale_rounds(r)
+               if rnd not in done and now >= start + timedelta(minutes=after) and now < start + timedelta(hours=4)]
+        if due:
+            rnd, after = due[-1]  # 晚到時只做最新的那一次，前面錯過的不補
+            if dispatch_sale_check(r, rnd, after):
+                done.extend(x for x, _ in due)
 
 
 SALE_KEYS = ["開賣", "開搶", "銷售", "搶購", "開放購票", "開放訂位", "限時", "快閃", "上架"]
