@@ -99,48 +99,6 @@ null
 "done": []
 },
 {
-"kind": "sale",
-"start": "2026-11-06T10:00:00+08:00",
-"title": "台灣虎航第2波夏季航班1599元起上午10時開賣 預告ITF旅展全航線999元",
-"airline": "台灣虎航",
-"code": "IT",
-"routes": [
-{
-"from": "TPE",
-"to": "YGJ",
-"fromName": "台北",
-"toName": "米子",
-"price": 1799
-},
-{
-"from": "TPE",
-"to": "OIT",
-"fromName": "台北",
-"toName": "大分",
-"price": 1799
-},
-{
-"from": "KHH",
-"to": "OKJ",
-"fromName": "高雄",
-"toName": "岡山",
-"price": 1799
-},
-{
-"from": "KHH",
-"to": "ISG",
-"fromName": "高雄",
-"toName": "石垣島",
-"price": 1599
-}
-],
-"travel": [
-"2027-03-28",
-"2027-10-30"
-],
-"done": []
-},
-{
 "title": "台灣虎航ITF線上旅展全航線999元起 今天上午10時開搶（台灣虎航2026ITF線上旅展，銷售期間自今天上午10時至11月9日下周一晚上11時59分，）",
 "link": "https://udn.com/news/story/7270/9860942?from=udn-relatednews_ch2",
 "start": "2026-11-09T10:00:00+08:00",
