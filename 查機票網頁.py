@@ -1568,9 +1568,9 @@ function renderScan(data, file){
       const v = `${ym}-${String(d).padStart(2, '0')}`, c = byDay[v];
       if (c && c.price != null) {
         const cls = c.price === low ? 'best' : c.price <= cut ? 'low' : '';
-        h += `<a class="cal-d has ${cls}" href="${esc(c.url)}" target="_blank" rel="noopener" title="${esc(c.d1label)}～${esc(c.d2label)} ${esc(c.airline)} ${fmt(c.price)}">${d}<small>${Number(c.price).toLocaleString('en-US')}</small></a>`;
+        h += `<a class="cal-d has ${cls}" data-d="${v}" href="${esc(c.url)}" target="_blank" rel="noopener" title="${esc(c.d1label)}～${esc(c.d2label)} ${esc(c.airline)} ${fmt(c.price)}">${d}<small>${Number(c.price).toLocaleString('en-US')}</small></a>`;
       } else {
-        h += `<div class="cal-d ${c ? '' : 'off'}">${d}<small>${c ? '—' : ''}</small></div>`;
+        h += `<div class="cal-d ${c ? '' : 'off'}" data-d="${v}">${d}<small>${c ? '—' : ''}</small></div>`;
       }
     }
     return h + '</div></div>';

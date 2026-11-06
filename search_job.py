@@ -78,8 +78,8 @@ def route_name(p):
 def tiger_section(p, kind):
     """虎航官網的未稅來回起價（只有台灣出發、虎航有飛的航線才有）；抓不到就回傳 ok=False，比價表照常用 Google"""
     o, d = p.get("origin"), p.get("dest")
-    if o not in tiger.TW_STATIONS:
-        return None
+    if o not in tiger.TW_STATIONS and d not in tiger.TW_STATIONS:
+        return {"status": "no_route"}  # 虎航只飛台灣進出（桃園、高雄、台中、台南）
     try:
         if kind == "scan":
             pairs = [(a, b) for a, b, _ in web.cache.get("day_list", [])]
@@ -88,29 +88,34 @@ def tiger_section(p, kind):
         out, back = tiger.daily(o, d), tiger.daily(d, o)
     except Exception as e:
         print("虎航官網失敗：", e)
-        return {"ok": False}
+        return {"status": "blocked", "ok": False}
     if not tiger.ok(o, d):
-        return {"ok": False}
+        return {"status": "blocked", "ok": False}   # 被擋或暫時連不上
     if not out and not back:
-        return None  # 虎航沒飛這條航線
+        return {"status": "no_route"}               # 有抓到資料，但虎航沒飛這條航線
     rows = []
     for a, b in pairs:
         x, y = out.get(a.isoformat()), back.get(b.isoformat())
         if x and y:
             rows.append({"d1": a.isoformat(), "d2": b.isoformat(), "label": f"{web.fmt_day(a)}～{web.fmt_day(b)}",
                          "total": x + y, "out": x, "ret": y})
-    return {"ok": True, "rows": rows}
+    if not rows:
+        return {"status": "no_dates", "ok": True, "rows": []}  # 有飛，但這些日期沒有票價
+    return {"status": "ok", "ok": True, "rows": rows}
 
 
 def tiger_line(R):
     tg = R.get("tiger")
     if not tg:
         return ""
-    if not tg.get("ok"):
-        return "\n\n🐯 虎航官網暫時抓不到，以上是 Google Flights 的價格"
+    st = tg.get("status") or ("ok" if tg.get("ok") else "blocked")
+    if st == "blocked":
+        return "\n\n🐯 虎航官網：這次沒抓到價格（可能被擋或暫時連不上），以上是 Google Flights 的價格"
+    if st == "no_route":
+        return "\n\n🐯 虎航沒有飛這條航線"
     rows = sorted(tg.get("rows") or [], key=lambda r: r["total"])
     if not rows:
-        return ""
+        return "\n\n🐯 虎航有飛這條航線，但這些日期官網沒有票價"
     b = rows[0]
     return (f"\n\n🐯 <b>虎航官網最低：{fmtp(b['total'])}</b>（未稅來回）\n"
             f"{b['label']}　去 {fmtp(b['out'])}、回 {fmtp(b['ret'])}\n<i>未稅價，結帳會再加稅金，不能直接跟上面的含稅價比</i>")
