@@ -332,6 +332,8 @@ def upcoming_events(reminders):
     now = datetime.now(TW)
     out = []
     for r in reminders:
+        if r.get("kind") == "tigerbase":
+            continue
         start = datetime.fromisoformat(r["start"])
         if r.get("kind") == "sale":
             for rnd, after in sale_rounds(r):
@@ -372,6 +374,82 @@ def run_sale_checks(reminders):
             rnd, after = due[-1]  # 晚到時只做最新的那一次，前面錯過的不補
             if dispatch_sale_check(r, rnd, after):
                 done.extend(x for x, _ in due)
+
+
+# ── 直接盯虎航官網：不用等新聞，官網突然大降價就通知 ──
+TIGER_DAYS = 270          # 看未來幾天的票價
+TIGER_DROP_MANY = 0.85    # 3 條以上航線最低價變成原本的 85% 以下
+TIGER_DROP_ONE = 0.70     # 或任何一條變成原本的 70% 以下
+TIGER_COOLDOWN_H = 12     # 同一條航線通知過後，幾小時內不再通知
+
+
+def tiger_watch(reminders):
+    """每小時看一次虎航官網所有航線的最低價，跟上次比；大降價就推播，並觸發降價追蹤的虎航檢查"""
+    try:
+        import tiger
+    except Exception:
+        return reminders
+    base = next((r for r in reminders if r.get("kind") == "tigerbase"), None)
+    if base is None:
+        base = {"kind": "tigerbase", "routes": {}, "alerted": {}}
+        reminders.append(base)
+    now = datetime.now(TW)
+    lo, hi = (date.today() + timedelta(days=1)).isoformat(), (date.today() + timedelta(days=TIGER_DAYS)).isoformat()
+    cur = {}
+    for st in tiger.TW_STATIONS:
+        rows = tiger._fetch(st)
+        if not rows:
+            continue
+        for o, d in {(r.get("origin"), r.get("destination")) for r in rows}:
+            if st not in (o, d):
+                continue
+            days = {k: v for k, v in tiger.daily(o, d).items() if lo <= k <= hi}
+            if days:
+                low = min(days.values())
+                cur[f"{o}-{d}"] = {"min": low, "days": sorted(k for k, v in days.items() if v == low)[:5]}
+    if not cur:
+        log("虎航官網這次沒抓到資料")
+        return reminders
+    old, alerted = base.get("routes") or {}, base.setdefault("alerted", {})
+    drops = []
+    for k, v in cur.items():
+        o = (old.get(k) or {}).get("min")
+        if not o or v["min"] >= o:
+            continue
+        last = alerted.get(k)
+        if last and now - datetime.fromisoformat(last) < timedelta(hours=TIGER_COOLDOWN_H):
+            continue
+        drops.append((v["min"] / o, k, o, v))
+    big = [x for x in drops if x[0] <= TIGER_DROP_ONE]
+    many = [x for x in drops if x[0] <= TIGER_DROP_MANY]
+    hit = sorted(many if len(many) >= 3 else big, key=lambda x: x[0])
+    base["routes"] = cur
+    base["at"] = now.isoformat()
+    if not old:
+        log(f"虎航官網：第一次記錄 {len(cur)} 條航線的最低價")
+        return reminders
+    if not hit:
+        log(f"虎航官網：{len(cur)} 條航線，沒有大降價")
+        return reminders
+    lines = [f"🐯 <b>虎航官網出現特價！</b>\n{len(hit)} 條航線大降價（直接看官網發現的，不是新聞）\n"]
+    for ratio, k, o, v in hit[:10]:
+        a, b = k.split("-")
+        ds = "、".join(f"{int(x[5:7])}/{int(x[8:])}" for x in v["days"])
+        lines.append(f"・{tiger.name(a)} → {tiger.name(b)}：NT${o:,} → <b>NT${v['min']:,}</b>（降 {round((1 - ratio) * 100)}%）　{ds}")
+        alerted[k] = now.isoformat()
+    lines.append("\n<i>單程未稅起價，結帳會再加稅金。特價座位很少，建議盡快到官網看。</i>"
+                 "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
+    send_telegram("\n".join(lines))
+    # 順便觸發降價追蹤的虎航檢查（你的追蹤＋這些航線）
+    routes = []
+    for _, k, _, v in hit[:6]:
+        a, b = k.split("-")
+        if a in tiger.TW_STATIONS:
+            routes.append({"from": a, "to": b, "fromName": tiger.name(a), "toName": tiger.name(b), "price": v["min"]})
+    reminders.append({"kind": "sale", "start": (now - timedelta(minutes=1)).isoformat(),
+                      "title": "虎航官網偵測到特價", "airline": "台灣虎航", "code": "IT",
+                      "routes": routes, "travel": [None, None]})
+    return reminders
 
 
 SALE_KEYS = ["開賣", "開搶", "銷售", "搶購", "開放購票", "開放訂位", "限時", "快閃", "上架"]
@@ -483,6 +561,9 @@ def check_reminders(reminders):
     now = datetime.now(TW)
     keep = []
     for r in reminders:
+        if r.get("kind") == "tigerbase":
+            keep.append(r)
+            continue
         start = datetime.fromisoformat(r["start"])
         if r.get("kind") == "sale":
             if now <= start + timedelta(hours=4):
@@ -554,6 +635,8 @@ def main():
         return
 
     reminders = check_reminders(load_json(REMIND_FILE, []))
+    if "--test" not in sys.argv and (datetime.now(TW).minute < 30 or "--search" in sys.argv):
+        reminders = tiger_watch(reminders)   # 每小時一次（整點後那一次）
     run_sale_checks(reminders)
 
     first_run = not os.path.exists(SEEN_FILE)
@@ -619,7 +702,7 @@ def main():
     log(f"新的促銷消息：{len(new)} 則")
 
     # 找開搶時間，加入提醒清單（同一個開搶時間＋相同航空只提醒一次）
-    have = {(r["start"], r["title"][:6]) for r in reminders}
+    have = {(r["start"], r["title"][:6]) for r in reminders if r.get("kind") != "tigerbase"}
     have |= {("sale", r["start"], r.get("code")) for r in reminders if r.get("kind") == "sale"}
     for it in new:
         starts = []
