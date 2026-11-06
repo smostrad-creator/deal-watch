@@ -1,1516 +1,1911 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>查機票</title>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="查機票">
-<meta name="theme-color" content="#1A66D2">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>交易日記</title>
 <style>
-:root{
-  --bg:#F3F6F9; --surface:#FFFFFF; --ink:#15263A; --muted:#5B6A7B; --line:#D3DCE5;
-  --strong:#15263A; --blue:#D5E5F4; --gold:#FFDE7A; --gold-ink:#3D2E00;
-  --accent:#1A66D2; --accent-ink:#FFFFFF; --warn:#9A6200; --focus:#2F7BD6; --range:#E3EDFB; --danger:#C62828; --danger-bg:#FDECEC;
-  color-scheme:light;
-}
-@media (prefers-color-scheme:dark){
-  :root{
-    --bg:#0E151D; --surface:#16202B; --ink:#E4ECF4; --muted:#93A2B3; --line:#2A3949;
-    --strong:#9FB3C8; --blue:#1C3753; --gold:#E3B93C; --gold-ink:#1A1300;
-    --accent:#5A9BE2; --accent-ink:#0E151D; --warn:#E0A84A; --focus:#7FB3EE; --range:#1F3753; --danger:#FF8A80; --danger-bg:#3A1C1C;
-    color-scheme:dark;
-  }
-}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink)}
-body{font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;font-size:15px;line-height:1.5}
-.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
-.ver{font-size:13px;font-weight:400;color:var(--muted);margin-left:8px}
-.toprow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.topbtns{margin-left:auto;display:flex;gap:6px;align-items:center}.topbtns .link{font-size:14px}.gearbtn{border:1px solid var(--line);background:var(--surface);font-size:18px;width:40px;height:40px}
-.note{white-space:pre-line}
-.log{color:var(--ink)}
-.mtabs{display:flex;gap:0;margin:0 0 14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
-.mtabs button{flex:1;border:0;border-radius:0;background:transparent;color:var(--muted);padding:11px 8px;font-size:15px;font-weight:700}
-.mtabs button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
-body.trackmode .go,body.trackmode .checks,body.trackmode #results,body.trackmode #progress{display:none}
-#tTargetBox[hidden],#tAmountBox[hidden],#trackOpts[hidden],#trackList[hidden]{display:none}
-.track-opts{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-.track-opts h3{margin:0 0 10px;font-size:15px}
-.opts2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-.tair{margin-top:12px}
-.tair summary{color:var(--accent);font-weight:700;font-size:14px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:16px;padding:4px 10px;font-size:13px;color:var(--ink)}
-.chip input{margin:0}
-.addtrack{margin-top:16px;width:100%;background:var(--accent);color:var(--accent-ink);border:0;padding:13px;font-size:16px;font-weight:700}
-.addtrack:disabled{opacity:.5}
-#trackList{margin-top:24px}
-.tl-head{display:flex;align-items:center;justify-content:space-between}
-.tl-head h2{font-size:18px;margin:0 0 10px}
-.tcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
-.tcard .t1{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:16px}
-.tcard .t2{font-size:13px;color:var(--muted);margin-top:4px}
-.tcard .t3{font-size:14px;margin-top:6px}
-.tcard .t4{font-size:12px;color:var(--muted);margin-top:4px}
-.tcard .t4 a{color:var(--accent)}
-.tdel{border:1px solid var(--line);background:transparent;color:var(--danger);padding:4px 12px;font-size:13px}
-.tbad{color:var(--muted)}
-h1{font-size:22px;margin:0 0 18px;font-weight:700;letter-spacing:.02em}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
-.route{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end;margin-bottom:16px}
-label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-input,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-width:0}
-input.big{font-size:20px;font-weight:700;padding:10px 12px;width:100%}
-input.big::placeholder{font-weight:400;font-size:16px;color:var(--muted)}
-.route{align-items:start}
-.route .swap{margin-top:24px}
-.ap{position:relative;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-.ap-sub{font-size:13px;color:var(--muted);min-height:20px}
-.dd{position:absolute;top:76px;left:0;right:0;z-index:20;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.18);max-height:380px;overflow:auto;padding:6px 0}
-.dd-country{font-size:13px;font-weight:700;color:var(--muted);padding:10px 14px 4px;position:sticky;top:-6px;background:var(--surface)}
-.dd-item{display:flex;align-items:baseline;gap:10px;padding:8px 14px;cursor:pointer;color:var(--ink)}
-.dd-item .city{font-weight:700;min-width:4.5em}
-.dd-item .name{color:var(--muted);font-size:14px;flex:1}
-.dd-item .code{font-weight:700;letter-spacing:.06em;color:var(--accent)}
-.dd-item[aria-selected=true],.dd-item:hover{background:var(--range)}
-.dd-empty{padding:12px 14px;color:var(--muted);font-size:14px}
-.dd-countries{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px 10px;border-bottom:1px solid var(--line)}
-.dd-countries button{border:1px solid var(--line);background:transparent;color:var(--ink);padding:4px 10px;border-radius:14px;font-size:13px}
-.dd-countries button:hover{border-color:var(--accent);color:var(--accent)}
-button{font:inherit;cursor:pointer;border-radius:8px}
-:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.swap{border:1px solid var(--line);background:var(--surface);color:var(--ink);width:42px;height:46px;font-size:18px}
-.tabs{display:flex;gap:6px;margin:4px 0 12px}
-.tabs button{border:1px solid var(--line);background:transparent;color:var(--muted);padding:6px 14px}
-.tabs button[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.pairs{display:flex;flex-direction:column;gap:8px}
-.pair{display:flex;gap:8px;align-items:stretch}
-.pair .x{border:1px solid var(--line);background:transparent;color:var(--muted);width:44px}
-.range{display:flex;align-items:center;gap:10px;flex-wrap:wrap;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 14px;font-size:16px;flex:1}
-.range:hover{border-color:var(--accent)}
-.range .rl{font-size:13px;color:var(--muted)}
-.range .dash{color:var(--muted)}
-.range .days{margin-left:auto;font-size:13px;color:var(--muted)}
-.add{border:1px dashed var(--line);background:transparent;color:var(--accent);padding:8px 12px;margin-top:8px}
-.weekly{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;align-items:end}
-.weekly.scan{grid-template-columns:1fr 1fr 1fr}
-.sm-m[hidden],.sm-d[hidden]{display:none}
-div.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:10px}
-.seg button{border:0;border-radius:0;background:transparent;color:var(--muted);padding:6px 16px;font-size:14px}
-.seg button + button{border-left:1px solid var(--line)}
-.seg button[aria-pressed=true]{background:var(--range);color:var(--accent);font-weight:700}
-/* 月曆 */
-.pk-overlay{position:fixed;inset:0;background:rgba(10,20,32,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
-.pk-overlay[hidden]{display:none}
-.pk{background:var(--surface);color:var(--ink);border-radius:14px;width:min(900px,100%);max-height:100%;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.3)}
-.pk-head{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.pk-t{font-weight:700;font-size:16px}
-.link{background:none;border:0;color:var(--accent);font-weight:700;padding:6px 8px}
-.pk-sel{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:8px;flex-wrap:wrap}
-.pk-box{display:flex;align-items:center;gap:4px;padding:6px 8px 6px 12px;min-width:200px}
-.pk-box + .pk-box{border-left:1px solid var(--line)}
-.pk-box b{flex:1;font-weight:500}
-.pk-box.empty b{color:var(--muted)}
-.pk-box button{background:none;border:0;color:var(--ink);font-size:18px;width:30px;height:30px;border-radius:50%}
-.pk-box button:hover{background:var(--bg)}
-.pk-body{position:relative;padding:18px 56px 10px}
-.pk-months{display:grid;grid-template-columns:1fr 1fr;gap:40px}
-.pk-month h3{text-align:center;font-size:18px;font-weight:500;margin:0 0 12px}
-.pk-grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:4px}
-.pk-wd{text-align:center;color:var(--muted);font-size:13px;padding-bottom:6px}
-.pk-day{position:relative;height:46px;border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;padding:0;border-radius:0}
-.pk-day span{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%}
-.pk-day:not(:disabled):hover span{box-shadow:inset 0 0 0 1px var(--ink)}
-.pk-day.in::before{content:"";position:absolute;top:2px;bottom:2px;left:0;right:0;background:var(--range)}
-.pk-day.in.start::before{left:50%}
-.pk-day.in.end::before{right:50%}
-.pk-day.start.end::before{display:none}
-.pk-day.start span,.pk-day.end span{background:var(--accent);color:var(--accent-ink);font-weight:700}
-.pk-day.today span{text-decoration:underline;text-underline-offset:4px}
-.pk-day:disabled{color:var(--line);cursor:default}
-.pk-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,.12)}
-.pk-nav.prev{left:8px}.pk-nav.next{right:8px}
-.pk-nav:disabled{opacity:.3;cursor:default}
-.pk-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-top:1px solid var(--line)}
-.pk-foot .done{background:var(--accent);color:var(--accent-ink);border:0;padding:10px 30px;border-radius:22px;font-weight:700;font-size:15px}
-.pk-foot .done:disabled{opacity:.4;cursor:default}
-#pk-days{font-size:15px}
-.cf{width:min(620px,100%)}
-.nf-head{display:flex;align-items:center;gap:10px;padding:16px 22px;background:var(--danger);color:#fff;font-size:19px;font-weight:700}
-.nf-icon{font-size:26px}
-.nf-lead{margin:0;font-size:16px;line-height:1.7}
-.nf-lead b{color:var(--danger)}
-.nf-list{display:flex;flex-direction:column;gap:10px}
-.nf-list div{padding:12px 14px;border-left:5px solid var(--danger);background:var(--danger-bg);border-radius:6px;line-height:1.6;font-size:15px}
-.nf-list b{font-size:17px}
-.done.nf-btn{background:var(--danger);color:#fff}
-.npb{margin-top:22px;padding:14px 16px;border:2px solid var(--danger);background:var(--danger-bg);border-radius:10px}
-.npb h3{margin:0 0 8px;font-size:16px;color:var(--danger)}
-.npb ul{margin:0;padding-left:20px;line-height:1.8}
-.npb p{margin:8px 0 0;font-size:13px;color:var(--muted)}
-.al-list{display:flex;flex-direction:column;gap:2px;max-height:50vh;overflow:auto}
-.al-list label{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer}
-.al-list label:hover{background:var(--bg)}
-.al-list input{width:18px;height:18px}
-.al-list .n{font-weight:700;flex:1}
-.al-list .pr{font-variant-numeric:tabular-nums}
-.al-list .c{font-size:12px;color:var(--muted);min-width:5em;text-align:right}
-.alf{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:26px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:14px}
-.alf .link{margin-left:auto}
-.cf-body{padding:18px 22px;display:flex;flex-direction:column;gap:18px}
-.cf-route{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
-.cf-ap b{display:block;font-size:22px}
-.cf-ap span{font-size:13px;color:var(--muted)}
-.cf-arrow{font-size:22px;color:var(--muted)}
-.cf-sec h4{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:700}
-.cf-dates{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto}
-.cf-dates li{display:flex;gap:10px;align-items:baseline}
-.cf-dates .d{color:var(--muted);font-size:13px;margin-left:auto}
-.cf-tags{display:flex;flex-wrap:wrap;gap:6px}
-.cf-tags span{border:1px solid var(--line);border-radius:14px;padding:3px 10px;font-size:13px}
-.cf-tags span.warn{border-color:var(--warn);color:var(--warn)}
-.cf-back{background:transparent;border:1px solid var(--line);color:var(--ink);padding:10px 22px;border-radius:22px;font-weight:700}
-.opts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-.hours{display:flex;gap:6px;align-items:center}
-.hours select{flex:1}
-.checks{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:14px}
-.checks label{display:flex;gap:6px;align-items:center}
-.checks small{color:var(--muted)}
-.go{margin-top:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.go button{background:var(--accent);color:var(--accent-ink);border:0;padding:12px 28px;font-size:16px;font-weight:700}
-.go button:disabled{opacity:.5;cursor:wait}
-.go button.stop{background:transparent;color:var(--warn);border:2px solid var(--warn);padding:10px 22px}
-.go button.stop:disabled{cursor:default}
-.note{margin-top:16px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
-.hint{color:var(--muted);font-size:13px}
-.progress{margin-top:22px}
-.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
-.log{margin-top:8px;font-size:13px;color:var(--muted);white-space:pre-line;max-height:120px;overflow:auto}
-.err{margin-top:16px;padding:12px 14px;border:1px solid var(--warn);color:var(--warn);border-radius:8px}
-.summary{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:26px 0 10px}
-.summary .cheap{font-size:17px}
-.summary .cheap b{background:var(--gold);color:var(--gold-ink);padding:2px 8px;border-radius:5px}
-.summary a{color:var(--accent);font-weight:700}
-.legend{font-size:13px;color:var(--muted);margin-bottom:10px}
-.legend span{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin:0 4px 0 10px}
-.scroll{overflow-x:auto;border:2px solid var(--strong);border-radius:4px;background:var(--surface)}
-table.grid{border-collapse:collapse;white-space:nowrap;font-variant-numeric:tabular-nums;width:max-content;min-width:100%}
-.grid th,.grid td{border:1px solid var(--line);padding:6px 12px;text-align:center}
-.grid thead th{background:var(--bg);font-weight:700}
-.grid thead tr:last-child th{border-bottom:2px solid var(--strong);font-weight:500;color:var(--muted)}
-.grid .al{font-size:15px}
-.grid .g{border-left:2px solid var(--strong)}
-.grid td.date{border-right:2px solid var(--strong);white-space:pre-line;line-height:1.3;position:sticky;left:0;background:var(--surface);z-index:1}
-.grid th.date{position:sticky;left:0;z-index:2;border-right:2px solid var(--strong)}
-.grid td.date a{color:var(--accent);text-decoration:underline}
-.grid tr.first td{border-top:2px solid var(--strong)}
-.grid tbody tr:first-child td{border-top:0}
-.grid td.p{text-align:right}
-.grid td.lo{background:var(--blue)}
-.grid td.best{font-weight:700}
-.grid td.top{background:var(--gold);color:var(--gold-ink)}
-.grid td.oneway{color:var(--muted);font-style:italic}
-.grid a.np{color:var(--muted);font-size:13px}
-details{margin-top:22px}
-.top10 td{padding:8px 14px}
-.top10 td.rank{font-weight:700;color:var(--muted)}
-.top10 tr.first td{border-top:0}
-.cal-title{font-size:17px;margin:28px 0 4px}
-.cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
-.cal-m h4{margin:0 0 8px;font-size:15px;text-align:center}
-.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.cal-wd{text-align:center;font-size:12px;color:var(--muted)}
-.cal-d{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:48px;border-radius:8px;font-size:14px;color:var(--ink);text-decoration:none;border:1px solid transparent}
-.cal-d small{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-.cal-d.has{border-color:var(--line)}
-.cal-d.has:hover{border-color:var(--accent)}
-.cal-d.low small{color:#1E8E3E;font-weight:700}
-.cal-d.best{background:var(--gold);color:var(--gold-ink)}
-.cal-d.best small{color:var(--gold-ink);font-weight:700}
-.cal-d.off{color:var(--line)}
-@media (prefers-color-scheme:dark){.cal-d.low small{color:#5BD07A}}
-summary{cursor:pointer;color:var(--accent);font-weight:700}
-.combo{margin-top:10px}
-.combo td.top{background:var(--gold);color:var(--gold-ink)}
-@media (max-width:760px){
-  .route{grid-template-columns:1fr}
-  .swap{justify-self:center;transform:rotate(90deg)}
-  .weekly,.opts{grid-template-columns:1fr 1fr}
-  .weekly > :first-child{grid-column:1 / -1}
-  .pk-months{grid-template-columns:1fr;gap:20px}
-  .pk-body{padding:14px 12px}
-  .pk-nav{top:34px;transform:none}
-  .pk-box{min-width:0;flex:1}
-  .pk-sel{margin-left:0;width:100%}
-}
-@media (max-width:520px){
-  .opts{grid-template-columns:1fr}
-  .opts select,.hours select{min-width:0;width:100%}
-  .panel{padding:16px 14px}
-  .tabs button{padding:6px 10px;font-size:14px}
-}
-@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif; background:#f5f5f3; color:#0b0b0b; margin:0; padding:16px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  input, select, textarea, button { font-family: inherit; font-size: 13px; }
+  input, select, textarea { width:100%; box-sizing:border-box; background:#fff; border:1px solid #d8d6cf; border-radius:8px; padding:8px 10px; color:#0b0b0b; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:#888780; }
+  button { background:transparent; border:1px solid #c3c2b7; border-radius:8px; padding:8px 14px; cursor:pointer; color:#0b0b0b; }
+  button:hover { background:#efeee9; }
+  button:disabled { opacity:0.5; cursor:not-allowed; }
+  .btn-primary { background:#0b0b0b; color:#fff; border:none; }
+  .btn-primary:hover { background:#2c2c2a; }
+  .label { font-size:11px; color:#898781; display:block; margin-bottom:4px; }
+  .card { background:#fcfcfb; border-radius:12px; border:1px solid #e1e0d9; padding:1rem 1.25rem; }
+  .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; position:relative; }
+  .header-left { display:flex; align-items:center; gap:10px; }
+  h1 { font-size:18px; font-weight:600; margin:0; }
+  h2 { font-size:15px; font-weight:600; margin:0; }
+  .metric-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-bottom:1.25rem; }
+  .metric { background:#fcfcfb; border-radius:8px; padding:1rem; border:1px solid #e1e0d9; }
+  .metric-label { font-size:12px; color:#898781; margin-bottom:4px; }
+  .metric-value { font-size:18px; font-weight:600; white-space:nowrap; }
+  .trade-card { background:#fcfcfb; border-radius:12px; border:1px solid #e1e0d9; padding:12px 14px; margin-bottom:8px; }
+  .form-grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px; }
+  .full { grid-column: 1 / 3; }
+  .acc-menu { display:none; position:absolute; top:calc(100% + 6px); left:0; width:220px; z-index:10; background:#fff; border:1px solid #e1e0d9; border-radius:12px; padding:6px; max-height:280px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+  .acc-menu.show { display:block; }
+  .acc-item { display:block; width:100%; text-align:left; background:transparent; border:none; border-radius:8px; padding:8px 10px; cursor:pointer; }
+  .acc-item:hover { background:#f0efe9; }
+  .warning-box { display:none; align-items:flex-start; gap:8px; background:#faeeda; border-radius:8px; padding:10px 12px; margin-bottom:12px; }
+  .warning-box.show { display:flex; }
+  .pair-options { display:none; position:absolute; top:100%; left:0; right:0; z-index:20; background:#fff; border:1px solid #e1e0d9; border-radius:8px; margin-top:4px; max-height:180px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+  .pair-options.show { display:block; }
+  .pair-item { padding:7px 10px; font-size:13px; cursor:pointer; }
+  .pair-item:hover { background:#f0efe9; }
+  img.thumb { width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #e1e0d9; cursor:pointer; }
+  #lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:300; align-items:center; justify-content:center; padding:20px; }
+  #lightbox img { max-width:100%; max-height:85vh; border-radius:8px; cursor:pointer; }
+  .lb-nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.15); border:none; color:#fff; width:44px; height:44px; border-radius:50%; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .lb-nav:hover { background:rgba(255,255,255,0.3); }
+  #lbPrev { left:12px; }
+  #lbNext { right:12px; }
+  #lbCounter { position:absolute; top:16px; left:50%; transform:translateX(-50%); color:#fff; font-size:13px; background:rgba(0,0,0,0.4); padding:4px 12px; border-radius:12px; }
+  #lbClose { position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.15); border:none; color:#fff; width:32px; height:32px; border-radius:50%; font-size:16px; cursor:pointer; }
+  .empty-state { background:#fcfcfb; border-radius:12px; padding:2.5rem 1.5rem; text-align:center; border:1px solid #e1e0d9; }
+  .risk-auto { display:none; background:#f0efe9; border-radius:8px; padding:8px 10px; font-size:12px; color:#52514e; }
+  .batch-row { display:flex; align-items:center; gap:10px; padding:10px 8px; border-bottom:1px solid #e1e0d9; font-size:14px; }
+  .batch-row input[type=checkbox] { width:15px; height:15px; flex-shrink:0; accent-color:#0b0b0b; margin:0; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal-grid-header { margin-bottom:6px; }
+  .cal-weekday { text-align:center; font-size:11px; color:#898781; padding:4px 0; }
+  .cal-cell { border:1px solid #e1e0d9; border-radius:8px; padding:6px 4px; min-height:56px; }
+  .cal-cell-empty { border:none; background:transparent; }
+  #diaryNoteInput:empty:before { content: attr(data-placeholder); color: #b8b6ad; }
+  #diaryNoteInput img { max-width:100%; max-height:360px; border-radius:8px; display:block; margin:10px 0; cursor:pointer; }
+  #diaryNoteInput:focus { outline:none; border-color:#888780; }
+  #diaryNoteInput { transition: max-height 0.2s ease; }
+  .auth-error { display:none; background:#fbe4e2; color:#a02c22; border-radius:8px; padding:10px 12px; font-size:12px; margin-bottom:12px; }
+  .auth-error.show { display:block; }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation: spin 0.7s linear infinite; vertical-align:-2px; margin-right:6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
+
+<div id="loginScreen" style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;">
+  <div class="card" style="width:100%; max-width:340px;">
+    <div style="text-align:center; margin-bottom:1.5rem;">
+      <div style="font-size:22px; font-weight:700; margin-bottom:4px;">交易日記</div>
+      <div id="authSubtitle" style="font-size:12px; color:#898781;">登入後開始記錄你的交易</div>
+    </div>
+    <div id="authError" class="auth-error"></div>
+
+    <div id="authFieldsNormal">
+      <div style="margin-bottom:12px;">
+        <label class="label">Email</label>
+        <input id="loginEmail" type="email" placeholder="you@example.com" />
+      </div>
+      <div id="passwordFieldWrap" style="margin-bottom:1.25rem;">
+        <label class="label">密碼</label>
+        <input id="loginPassword" type="password" placeholder="至少 6 碼" />
+      </div>
+    </div>
+
+    <button id="loginBtn" class="btn-primary" style="width:100%; padding:10px;">登入</button>
+
+    <div id="loginExtraLinks" style="text-align:center; margin-top:10px; font-size:12px; color:#898781;">
+      <a href="#" id="forgotLink" style="color:#52514e; text-decoration:none;">忘記密碼?</a>
+    </div>
+    <div style="text-align:center; margin-top:8px; font-size:12px; color:#898781;">
+      還沒有帳號?<a href="#" id="signupLink" style="color:#0b0b0b; font-weight:600; text-decoration:none;">註冊</a>
+    </div>
+    <div id="confirmNotice" style="display:none; text-align:center; margin-top:10px; font-size:12px; color:#52514e; background:#f0efe9; border-radius:8px; padding:10px;">
+      註冊信已寄出,請到你的 email 收信並點擊驗證連結,驗證後就可以回來登入。
+    </div>
+    <div id="resetSentNotice" style="display:none; text-align:center; margin-top:10px; font-size:12px; color:#52514e; background:#f0efe9; border-radius:8px; padding:10px;">
+      重設密碼信已寄出,請到你的 email 收信並點擊連結,連結會帶你回來設定新密碼。
+    </div>
+  </div>
+</div>
+
+<div id="resetPasswordScreen" style="display:none; min-height:100vh; align-items:center; justify-content:center; padding:20px;">
+  <div class="card" style="width:100%; max-width:340px;">
+    <div style="text-align:center; margin-bottom:1.5rem;">
+      <div style="font-size:22px; font-weight:700; margin-bottom:4px;">設定新密碼</div>
+      <div style="font-size:12px; color:#898781;">請輸入你的新密碼</div>
+    </div>
+    <div id="resetError" class="auth-error"></div>
+    <div style="margin-bottom:12px;">
+      <label class="label">新密碼</label>
+      <input id="newPassword1" type="password" placeholder="至少 6 碼" />
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <label class="label">再輸入一次</label>
+      <input id="newPassword2" type="password" placeholder="再輸入一次" />
+    </div>
+    <button id="submitNewPasswordBtn" class="btn-primary" style="width:100%; padding:10px;">更新密碼</button>
+  </div>
+</div>
+
+<div id="appWrap" style="display:none;">
 <div class="wrap">
-  <h1 class="toprow">查機票 <small class="ver">手機版</small>
-    <span class="topbtns"><button type="button" class="link" id="lastBtn">最近結果</button><button type="button" class="gearbtn" id="gear" aria-label="設定">⚙️</button></span></h1>
-  <div class="mtabs" role="group" aria-label="功能"><button type="button" id="mt-search" aria-pressed="true">🔍 查機票</button><button type="button" id="mt-track" aria-pressed="false">📉 降價追蹤</button></div>
-  <div class="note" id="setupHint" hidden>第一次使用：請按右上角 ⚙️ 貼上 GitHub 通行碼。</div>
-
-  <form class="panel" id="form" autocomplete="off">
-    <div class="route">
-      <div class="f ap" id="ap-origin">
-        <label for="origin">出發地</label>
-        <input class="big" id="origin" role="combobox" aria-expanded="false" aria-controls="dd-origin" aria-autocomplete="list" placeholder="國家、城市或機場">
-        <span class="ap-sub" id="sub-origin"></span>
-        <div class="dd" id="dd-origin" role="listbox" hidden></div>
-      </div>
-      <button type="button" class="swap" id="swap" aria-label="出發地和目的地互換">⇄</button>
-      <div class="f ap" id="ap-dest">
-        <label for="dest">目的地</label>
-        <input class="big" id="dest" role="combobox" aria-expanded="false" aria-controls="dd-dest" aria-autocomplete="list" placeholder="國家、城市或機場">
-        <span class="ap-sub" id="sub-dest"></span>
-        <div class="dd" id="dd-dest" role="listbox" hidden></div>
-      </div>
+  <div class="header">
+    <div class="header-left">
+      <button id="menuBtn" aria-label="切換帳戶" style="padding:8px 10px;">&#9776;</button>
+      <h1 id="accName">交易日記</h1>
+      <button id="editAccBtn" aria-label="編輯帳戶" style="padding:6px 8px; display:none;">&#9998;</button>
     </div>
-
-    <div class="tabs" role="group" aria-label="日期方式">
-      <button type="button" id="tab-pairs" aria-pressed="true">指定日期</button>
-      <button type="button" id="tab-weekly" aria-pressed="false">每週固定出發</button>
-      <button type="button" id="tab-scan" aria-pressed="false">月份區間找最便宜</button>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button id="newAccBtn" class="btn-primary">+ 新增帳戶</button>
+      <button id="changePwBtn" aria-label="修改密碼" style="padding:8px 10px;">&#128274;</button>
+      <button id="logoutBtn" style="padding:8px 10px;">登出</button>
     </div>
-
-    <div id="mode-pairs">
-      <div class="pairs" id="pairs"></div>
-      <button type="button" class="add" id="addPair">＋ 再加一組日期</button>
-    </div>
-
-    <div id="mode-weekly" hidden>
-      <div class="weekly">
-        <div class="f">搜尋範圍<button type="button" class="range" id="wRangeBtn"></button></div>
-        <label class="f">每週星期幾出發
-          <select id="wDay">
-            <option value="1">星期一</option><option value="2">星期二</option><option value="3">星期三</option>
-            <option value="4">星期四</option><option value="5">星期五</option><option value="6" selected>星期六</option>
-            <option value="7">星期日</option>
-          </select>
-        </label>
-        <label class="f">旅遊天數<input type="number" id="wNights" min="2" max="60" value="4"></label>
-      </div>
-      <p class="hint" id="wCount"></p>
-    </div>
-
-    <div id="mode-scan" hidden>
-      <div class="seg" role="group" aria-label="區間方式">
-        <button type="button" id="sm-month" aria-pressed="true">選月份</button>
-        <button type="button" id="sm-date" aria-pressed="false">選日期</button>
-      </div>
-      <div class="weekly scan">
-        <label class="f sm-m">從哪個月<select id="sStart"></select></label>
-        <label class="f sm-m">到哪個月<select id="sEnd"></select></label>
-        <div class="f sm-d" style="grid-column:span 2" hidden>日期範圍<button type="button" class="range" id="sRangeBtn"></button></div>
-        <label class="f">旅遊天數<input type="number" id="sDays" min="2" max="30" value="4"></label>
-      </div>
-      <p class="hint" id="sCount"></p>
-    </div>
-
-    <div class="opts">
-      <label class="f">轉機
-        <select id="stops">
-          <option value="0" selected>只要直飛</option>
-          <option value="1">最多轉 1 次</option>
-          <option value="any">不限</option>
-        </select>
-      </label>
-      <label class="f">大人人數
-        <select id="adults"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
-      </label>
-      <label class="f">去程出發時段
-        <span class="hours"><select id="outFrom"></select>～<select id="outTo"></select></span>
-      </label>
-      <label class="f">回程出發時段
-        <span class="hours"><select id="retFrom"></select>～<select id="retTo"></select></span>
-      </label>
-    </div>
-
-    <div class="checks">
-      <label><input type="checkbox" id="full"> 列出所有去回組合 <small>（較完整，但慢很多）</small></label>
-      <label><input type="checkbox" id="demo"> 示範模式 <small>（假資料，不連 Google）</small></label>
-    </div>
-
-    <div id="trackOpts" class="track-opts" hidden>
-      <h3>通知方式</h3>
-      <div class="opts2">
-        <label class="f">什麼時候通知我
-          <select id="tMode"><option value="drop">有降價就通知</option><option value="below">低於目標價</option><option value="dropBy">降價超過多少才通知</option><option value="any">漲跌都通知</option></select></label>
-        <label class="f" id="tTargetBox" hidden>目標價（來回總價，台幣）<input type="number" id="tTarget" inputmode="numeric" placeholder="例如 8000"></label>
-        <label class="f" id="tAmountBox" hidden>降超過多少才通知（台幣）<input type="number" id="tAmount" inputmode="numeric" placeholder="例如 300"></label>
-      </div>
-      <details class="tair"><summary>只追蹤特定航空公司（不選＝全部）</summary><div id="tAirlines" class="chips"></div></details>
-      <button type="button" id="addTrack" class="addtrack">＋ 加入降價追蹤</button>
-      <p class="hint" style="margin:8px 0 0">每天早上 8 點、晚上 8 點自動查一次；特價快報推播特價時，開賣後也會自動加查。符合條件就傳 Telegram。</p>
-    </div>
-
-    <div class="go">
-      <button type="submit" id="goBtn">搜尋</button>
-      <button type="button" id="stopBtn" class="stop" hidden>■ 停止</button>
-      <span class="hint" id="estimate"></span>
-    </div>
-  </form>
-
-  <div class="progress" id="progress" hidden>
-    <div class="bar"><i id="barFill"></i></div>
-    <div class="log" id="log" aria-live="polite"></div>
+    <div id="accMenu" class="acc-menu"></div>
   </div>
-  <div class="err" id="err" hidden role="alert"></div>
-  <div class="note" id="note" hidden role="status"></div>
 
-  <section id="trackList" hidden>
-    <div class="tl-head"><h2>我的追蹤</h2><button type="button" class="link" id="tRefresh">重新整理</button></div>
-    <div id="tlist"></div>
-  </section>
+  <div id="changePwForm" class="card" style="display:none; margin-bottom:1.25rem;">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:#52514e;">修改密碼</div>
+    <div id="changePwError" class="auth-error"></div>
+    <div id="changePwSuccess" style="display:none; background:#e8f4e9; color:#0a7a2e; border-radius:8px; padding:10px 12px; font-size:12px; margin-bottom:12px;">密碼修改成功。</div>
+    <div class="form-grid">
+      <div><label class="label">新密碼</label><input id="changePwInput1" type="password" placeholder="至少 6 碼" /></div>
+      <div><label class="label">再輸入一次</label><input id="changePwInput2" type="password" placeholder="再輸入一次" /></div>
+    </div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button id="cancelChangePw">取消</button>
+      <button id="saveChangePw" class="btn-primary">更新密碼</button>
+    </div>
+  </div>
 
-  <section id="results" hidden>
-    <div class="npb" id="npb" hidden role="alert"></div>
-    <div class="alf" id="alf" hidden><span id="alfText"></span><button type="button" class="link" id="alfBtn">更改航空公司</button></div>
-    <div class="summary">
-      <div class="cheap" id="cheap"></div>
-      <a id="dl" href="#">下載 Excel</a>
+  <div id="newAccForm" class="card" style="display:none; margin-bottom:1.25rem;">
+    <div class="form-grid">
+      <div><label class="label">名稱</label><input id="accNameInput" placeholder="例如 19056201" /></div>
+      <div><label class="label">起始資金</label><input id="accCapInput" type="number" placeholder="例如 500" /></div>
     </div>
-    <div class="legend">
-      <span style="background:var(--blue)"></span>該欄最便宜
-      <span style="background:var(--gold)"></span>同一組日期全部最便宜
-      　★ 回程價是搭配這班去程　點日期可開 Google Flights 確認
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button id="cancelAcc">取消</button>
+      <button id="createAcc" class="btn-primary">建立</button>
     </div>
-    <div class="scroll"><table class="grid" id="grid"></table></div>
-    <div id="scanBox" hidden>
-      <div class="scroll"><table class="grid top10" id="top10"></table></div>
-      <h3 class="cal-title">每天最低價</h3>
-      <p class="hint" style="margin:0 0 10px">日期是出發日，價格是那天出發的最低來回價。點日期可以打開 Google Flights。</p>
-      <div class="cal" id="cal"></div>
+  </div>
+
+  <div id="editAccForm" class="card" style="display:none; margin-bottom:1.25rem;">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:#52514e;">編輯帳戶</div>
+    <div class="form-grid">
+      <div><label class="label">名稱</label><input id="editAccNameInput" /></div>
+      <div><label class="label">起始資金</label><input id="editAccCapInput" type="number" /></div>
     </div>
-    <details id="comboBox" hidden>
-      <summary>所有去回組合（由便宜到貴）</summary>
-      <div class="scroll combo"><table class="grid" id="combo"></table></div>
-    </details>
-  </section>
+    <div style="display:flex; gap:8px; justify-content:space-between; align-items:center;">
+      <button id="deleteAccBtn" style="color:#e34948; border-color:#f0c9c8;">刪除此帳戶</button>
+      <div style="display:flex; gap:8px;">
+        <button id="cancelEditAcc">取消</button>
+        <button id="saveEditAcc" class="btn-primary">儲存</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div id="mainArea"></div>
+</div>
 </div>
 
-<div class="pk-overlay" id="cf" hidden>
-  <div class="pk cf" role="dialog" aria-modal="true" aria-labelledby="cf-title">
-    <div class="pk-head"><span class="pk-t" id="cf-title">確認搜尋內容</span></div>
-    <div class="cf-body" id="cf-body"></div>
-    <div class="pk-foot">
-      <button type="button" class="cf-back" id="cf-back">返回修改</button>
-      <button type="button" class="done" id="cf-go">確定搜尋</button>
+<div id="lightbox">
+  <button id="lbClose">×</button>
+  <div id="lbCounter"></div>
+  <button id="lbPrev" class="lb-nav">‹</button>
+  <img id="lightboxImg" />
+  <button id="lbNext" class="lb-nav">›</button>
+</div>
+
+<div id="diaryScreen" style="display:none; position:fixed; inset:0; background:#f5f5f3; z-index:200;">
+  <div id="diaryHeader" style="position:fixed; top:0; left:0; right:0; height:56px; z-index:20; background:#f5f5f3; border-bottom:1px solid #e1e0d9; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 16px; box-sizing:border-box;">
+    <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+      <button id="diarySidebarToggle" style="padding:6px 10px; display:none;">☰ 列表</button>
+      <div id="diaryDateLabel" style="font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+      <button id="diarySaveBtn" class="btn-primary">儲存</button>
+      <button id="diaryCloseBtn">關閉</button>
+    </div>
+  </div>
+  <div style="display:flex; height:100%; position:relative; padding-top:56px; box-sizing:border-box;">
+    <div id="diarySidebarOverlay" style="display:none; position:fixed; top:56px; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); z-index:5;"></div>
+    <div id="diarySidebar" style="width:220px; flex-shrink:0; background:#fcfcfb; border-right:1px solid #e1e0d9; overflow-y:auto; padding:12px;"></div>
+    <div style="flex:1; overflow-y:auto; padding:16px 20px; min-width:0;">
+      <div id="diaryTradeInfo" class="card" style="margin-bottom:16px;"></div>
+      <div class="card">
+        <label class="label">日記(可直接在下面打字,貼上或選擇照片會插入在游標位置,依你操作的順序排列)</label>
+        <div id="diaryNoteInput" contenteditable="true" data-placeholder="寫下這筆交易的想法...(可直接貼上或選擇照片)" style="margin-top:8px; min-height:260px; border:1px solid #d8d6cf; border-radius:8px; padding:10px; background:#fff; font-size:13px; line-height:1.7; overflow-y:auto;"></div>
+        <div style="margin-top:10px;">
+          <input id="diaryImages" type="file" accept="image/*" multiple />
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="pk-overlay" id="nf" hidden>
-  <div class="pk cf" role="alertdialog" aria-modal="true" aria-labelledby="nf-title">
-    <div class="nf-head"><span class="nf-icon" aria-hidden="true">⚠️</span><span id="nf-title">注意！有航空公司查不到價格</span></div>
-    <div class="cf-body">
-      <p class="nf-lead">下面這些航空公司<b>有飛</b>，但 Google 沒有給價格，所以<b>沒有列進比價表格</b>。<br>它們可能更便宜，訂票前請記得到 Google Flights 看一下。</p>
-      <div class="nf-list" id="nf-list"></div>
-      <p class="hint" style="margin:0">結果頁最上面也會一直顯示這個提醒。</p>
-    </div>
-    <div class="pk-foot"><span></span><button type="button" class="done nf-btn" id="nf-ok">我知道了，等一下去查</button></div>
-  </div>
-</div>
-
-<div class="pk-overlay" id="al" hidden>
-  <div class="pk cf" role="dialog" aria-modal="true" aria-labelledby="al-title">
-    <div class="pk-head"><span class="pk-t" id="al-title">要比較哪幾家航空公司？</span>
-      <button type="button" class="link" id="al-all">全選</button><button type="button" class="link" id="al-none">全不選</button></div>
-    <div class="cf-body">
-      <p class="hint" style="margin:0" id="al-hint"></p>
-      <div class="al-list" id="al-list"></div>
-    </div>
-    <div class="pk-foot"><span class="hint" id="al-count"></span><button type="button" class="done" id="al-go">確定</button></div>
-  </div>
-</div>
-
-<div class="pk-overlay" id="pk" hidden>
-  <div class="pk" role="dialog" aria-modal="true" aria-labelledby="pk-title">
-    <div class="pk-head">
-      <span class="pk-t" id="pk-title">選擇日期</span>
-      <button type="button" class="link" id="pk-reset">重設</button>
-      <div class="pk-sel">
-        <span class="pk-box" id="pk-a-box"><span aria-hidden="true">📅</span><b id="pk-a"></b>
-          <button type="button" data-shift="a,-1" aria-label="開始日往前一天">‹</button><button type="button" data-shift="a,1" aria-label="開始日往後一天">›</button></span>
-        <span class="pk-box" id="pk-b-box"><b id="pk-b"></b>
-          <button type="button" data-shift="b,-1" aria-label="結束日往前一天">‹</button><button type="button" data-shift="b,1" aria-label="結束日往後一天">›</button></span>
-      </div>
-    </div>
-    <div class="pk-body">
-      <button type="button" class="pk-nav prev" id="pk-prev" aria-label="上個月">‹</button>
-      <div class="pk-months" id="pk-months"></div>
-      <button type="button" class="pk-nav next" id="pk-next" aria-label="下個月">›</button>
-    </div>
-    <div class="pk-foot"><span id="pk-days"></span><button type="button" class="done" id="pk-done">完成</button></div>
-  </div>
-</div>
-
-
-<div class="pk-overlay" id="st" hidden>
-  <div class="pk cf" role="dialog" aria-modal="true" aria-labelledby="st-title">
-    <div class="pk-head"><span class="pk-t" id="st-title">設定</span></div>
-    <div class="cf-body">
-      <label class="f">GitHub 通行碼（token）<input id="st-token" type="password" autocomplete="off" placeholder="github_pat_…"></label>
-      <label class="f">GitHub 帳號<input id="st-owner" autocomplete="off"></label>
-      <label class="f">專案名稱<input id="st-repo" autocomplete="off" placeholder="deal-watch"></label>
-      <p class="hint" style="margin:0">只會存在這支手機的瀏覽器裡，不會傳到其他地方。</p>
-    </div>
-    <div class="pk-foot"><button type="button" class="cf-back" id="st-cancel">取消</button><button type="button" class="done" id="st-save">儲存</button></div>
-  </div>
-</div>
-
-<script>
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = n => n == null ? '' : 'NT$' + Number(n).toLocaleString('en-US');
-const iso = d => d.toISOString().slice(0,10);
-const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return iso(d); };
-
-const WD = '日一二三四五六';
-const P = v => { const [y, m, d] = v.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
-const longDate = v => { const d = P(v); return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日 週${WD[d.getUTCDay()]}`; };
-const dayDiff = (a, b) => Math.round((P(b) - P(a)) / 864e5);
-const tripDays = (a, b) => dayDiff(a, b) + 1;  // 含出發日和回程日，例如 1/10～1/13 = 4 天
-const monthStart = v => { const d = P(v); return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)); };
-
-// 預設：下一個週六出發、週二回
-const now = new Date();
-const TODAY = iso(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())));
-const nextSat = (() => { const d = P(TODAY); d.setUTCDate(d.getUTCDate() + ((6 - d.getUTCDay() + 7) % 7 || 7)); return iso(d); })();
-
-let pairs = [{a: nextSat, b: addDays(nextSat, 3)}];
-let wRange = {a: TODAY, b: addDays(TODAY, 56)};
-
-function rangeHTML(a, b, la, lb, tail){
-  return `<span aria-hidden="true">📅</span><span class="rl">${la}</span><b>${longDate(a)}</b>` +
-         `<span class="dash">－</span><span class="rl">${lb}</span><b>${longDate(b)}</b>` +
-         (tail ? `<span class="days">${tail}</span>` : '');
-}
-function renderPairs(){
-  const box = $('pairs'); box.innerHTML = '';
-  pairs.forEach((p, i) => {
-    const row = document.createElement('div'); row.className = 'pair';
-    row.innerHTML = `<button type="button" class="range">${rangeHTML(p.a, p.b, '去程', '回程', tripDays(p.a, p.b) + ' 日行程')}</button>` +
-      (pairs.length > 1 ? '<button type="button" class="x" aria-label="刪除這組">✕</button>' : '');
-    row.querySelector('.range').onclick = () => openPicker(p.a, p.b, '選擇去程和回程日期', (a, b) => { pairs[i] = {a, b}; renderPairs(); });
-    const x = row.querySelector('.x'); if (x) x.onclick = () => { pairs.splice(i, 1); renderPairs(); };
-    box.appendChild(row);
-  });
-  update();
-}
-$('addPair').onclick = () => {
-  const last = pairs[pairs.length - 1], n = addDays(last.a, 7);
-  pairs.push({a: n, b: addDays(n, dayDiff(last.a, last.b))}); renderPairs();
-};
-function renderWeekly(){ $('wRangeBtn').innerHTML = rangeHTML(wRange.a, wRange.b, '從', '到', ''); update(); }
-$('wRangeBtn').onclick = () => openPicker(wRange.a, wRange.b, '選擇要搜尋的日期範圍', (a, b) => { wRange = {a, b}; renderWeekly(); }, true);
-
-// ── 月曆 ──
-const pk = {a: null, b: null, hover: null, view: null, cb: null};
-function openPicker(a, b, title, cb, span = false){
-  Object.assign(pk, {a, b, hover: null, cb, span, view: monthStart(a || TODAY)});
-  $('pk-title').textContent = title; $('pk').hidden = false; document.body.style.overflow = 'hidden';
-  drawPicker(); $('pk-done').focus();
-}
-function closePicker(){ $('pk').hidden = true; document.body.style.overflow = ''; }
-function drawPicker(){
-  let h = '';
-  for (let k = 0; k < 2; k++) {
-    const m = new Date(pk.view); m.setUTCMonth(m.getUTCMonth() + k);
-    const y = m.getUTCFullYear(), mo = m.getUTCMonth();
-    h += `<div class="pk-month"><h3>${y}年${mo + 1}月</h3><div class="pk-grid">` + [...WD].map(w => `<div class="pk-wd">${w}</div>`).join('');
-    const first = new Date(Date.UTC(y, mo, 1)).getUTCDay();
-    for (let i = 0; i < first; i++) h += '<div></div>';
-    const dim = new Date(Date.UTC(y, mo + 1, 0)).getUTCDate();
-    for (let d = 1; d <= dim; d++) {
-      const v = iso(new Date(Date.UTC(y, mo, d)));
-      h += `<button type="button" class="pk-day" data-d="${v}" ${v < TODAY ? 'disabled' : ''} aria-label="${longDate(v)}"><span>${d}</span></button>`;
+<style>
+  @media (max-width: 720px) {
+    #diarySidebar {
+      position: fixed; top:56px; bottom:0; left:0; z-index:10;
+      transform: translateX(-100%);
+      transition: transform 0.2s ease;
+      box-shadow: 4px 0 12px rgba(0,0,0,0.1);
     }
-    h += '</div></div>';
+    #diarySidebar.show { transform: translateX(0); }
+    #diarySidebarToggle { display:inline-block !important; }
+    input, select, textarea, #diaryNoteInput { font-size: 16px !important; }
   }
-  $('pk-months').innerHTML = h;
-  $('pk-prev').disabled = iso(pk.view) <= iso(monthStart(TODAY));
-  paint();
-}
-function paint(){
-  const e = pk.b || (pk.a && pk.hover && pk.hover > pk.a ? pk.hover : null);
-  document.querySelectorAll('.pk-day').forEach(el => {
-    const d = el.dataset.d;
-    el.classList.toggle('start', d === pk.a);
-    el.classList.toggle('end', d === e);
-    el.classList.toggle('in', !!(pk.a && e && d >= pk.a && d <= e));
-    el.classList.toggle('today', d === TODAY);
-    el.setAttribute('aria-pressed', d === pk.a || d === pk.b);
-  });
-  $('pk-a').textContent = pk.a ? longDate(pk.a) : '開始日期';
-  $('pk-b').textContent = pk.b ? longDate(pk.b) : '結束日期';
-  $('pk-a-box').classList.toggle('empty', !pk.a); $('pk-b-box').classList.toggle('empty', !pk.b);
-  $('pk-days').textContent = pk.a && pk.b ? (pk.span ? `共 ${tripDays(pk.a, pk.b)} 天` : `${tripDays(pk.a, pk.b)} 日行程`) : (pk.a ? '再點一下結束日期' : '先點開始日期');
-  $('pk-done').disabled = !(pk.a && pk.b);
-}
-function showMonthOf(v){
-  const ms = monthStart(v), second = new Date(pk.view); second.setUTCMonth(second.getUTCMonth() + 1);
-  if (ms < pk.view) pk.view = ms;
-  else if (ms > second) { pk.view = ms; pk.view.setUTCMonth(pk.view.getUTCMonth() - 1); }
-  drawPicker();
-}
-$('pk-months').addEventListener('click', e => {
-  const el = e.target.closest('.pk-day'); if (!el || el.disabled) return;
-  const d = el.dataset.d;
-  if (!pk.a || pk.b) { pk.a = d; pk.b = null; } else if (d < pk.a) { pk.a = d; } else { pk.b = d; }
-  pk.hover = null; paint();
-});
-$('pk-months').addEventListener('mouseover', e => {
-  const el = e.target.closest('.pk-day');
-  if (el && pk.a && !pk.b && pk.hover !== el.dataset.d) { pk.hover = el.dataset.d; paint(); }
-});
-$('pk-prev').onclick = () => { pk.view.setUTCMonth(pk.view.getUTCMonth() - 1); drawPicker(); };
-$('pk-next').onclick = () => { pk.view.setUTCMonth(pk.view.getUTCMonth() + 1); drawPicker(); };
-$('pk-reset').onclick = () => { pk.a = null; pk.b = null; paint(); };
-$('pk-done').onclick = () => { pk.cb(pk.a, pk.b); closePicker(); };
-$('pk').addEventListener('click', e => { if (e.target.id === 'pk') closePicker(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pk').hidden) closePicker(); });
-document.querySelectorAll('[data-shift]').forEach(btn => btn.onclick = () => {
-  const [k, n] = btn.dataset.shift.split(','); if (!pk[k]) return;
-  const v = addDays(pk[k], Number(n));
-  if (v < TODAY || (k === 'a' && pk.b && v > pk.b) || (k === 'b' && v < pk.a)) return;
-  pk[k] = v; showMonthOf(v);
-});
+</style>
 
-['wDay','wNights','full','stops'].forEach(id => $(id).addEventListener('change', update));
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ====== Supabase 設定 ======
+const SUPABASE_URL = 'https://mayncajgsbejozqypbtk.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_rohqz-OLrAkdeQ9CbBLJvQ_9lDlDiY5';
+const IMAGE_BUCKET = 'trade-images';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-for (const id of ['outFrom','outTo','retFrom','retTo']) {
-  const s = $(id); s.innerHTML = '<option value="">不限</option>' +
-    Array.from({length:24}, (_, h) => `<option value="${h}">${String(h).padStart(2,'0')}:00</option>`).join('');
+let currentUser = null;
+let accounts = [];
+let activeId = null;
+let editingTradeId = null;
+let activeView = 'chart'; // 'chart' | 'calendar' | 'pie'
+let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let selectedDateStart = null; // 'YYYY-MM-DD' 或 null(未篩選)
+let selectedDateEnd = null;
+let pieFilterPair = null; // 商品圓餅圖點選後的篩選,null 代表未篩選
+let pieChart = null;
+let diaryCurrentDate = null;
+let diaryDayTrades = [];
+let diarySelectedTradeId = null;
+let diaryDirty = false;
+let pairList = ['XAUUSD','EURUSD','GBPUSD','AUDUSD','USDCAD','USDCHF','USDJPY','AUDCAD','AUDCHF','AUDJPY','GBPCAD','GBPCHF','GBPJPY','GBPAUD','GBPNZD','EURCAD','EURCHF','EURJPY','EURAUD','EURNZD','CADCHF','CADJPY','CHFJPY','NAS100','USOUSD'];
+let selectedPair = pairList[0];
+let draftImages = []; // {previewUrl, file} for new, {url} for existing
+let parsedBatch = [];
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function fmtMoney(n){ n = Number(n)||0; const s = n<0?'-':''; return s+'$'+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function totalPnlOf(t){ return Number(t.pnl)||0; } // 損益本身已含庫存費,不再額外加總
+function netTradingPnl(t){ return (Number(t.pnl)||0) - (Number(t.storageFee)||0); } // 扣掉庫存費後的純交易損益,給風控計算用
+function nowPlatformStr(){
+  const d = new Date();
+  const pad = n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'.'+pad(d.getMonth()+1)+'.'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+}
+function parsePlatformDate(p){
+  if(!p) return null;
+  p = p.trim();
+  const m = p.match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})[ T]?(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?/);
+  if(!m) return null;
+  const [, y, mo, day, h, mi, s] = m;
+  const d = new Date(Number(y), Number(mo)-1, Number(day), Number(h||0), Number(mi||0), Number(s||0));
+  return isNaN(d.getTime()) ? null : d;
+}
+function taiwanTime(p){
+  const d = parsePlatformDate(p);
+  if(!d) return '';
+  d.setHours(d.getHours()+5);
+  const pad = n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'.'+pad(d.getMonth()+1)+'.'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
 }
 
-let mode = 'pairs';
-function setMode(m){
-  mode = m;
-  for (const k of ['pairs', 'weekly', 'scan']) {
-    $('tab-' + k).setAttribute('aria-pressed', m === k); $('mode-' + k).hidden = m !== k;
+function formatHoldingDuration(openStr, closeStr){
+  const o = parsePlatformDate(openStr);
+  const c = parsePlatformDate(closeStr);
+  if(!o || !c) return null;
+  const diffMs = c - o;
+  if(diffMs < 0) return null;
+  const totalMin = Math.floor(diffMs / 60000);
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  const mins = totalMin % 60;
+  const parts = [];
+  if(days > 0) parts.push(days + '天');
+  if(days > 0 || hours > 0) parts.push(hours + '小時');
+  parts.push(mins + '分');
+  return parts.join('');
+}
+
+function dateKeyOf(platformTimeStr){
+  const d = parsePlatformDate(platformTimeStr);
+  if(!d) return null;
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function checkLogicWarning(direction, entry, exit, pnl){
+  const e = Number(entry), x = Number(exit), p = Number(pnl);
+  if(isNaN(e) || isNaN(x) || isNaN(p) || e===x) return '';
+  const priceWentUp = x > e;
+  const expectProfit = direction === 'buy' ? priceWentUp : !priceWentUp;
+  if(expectProfit && p < 0){
+    return direction==='buy' ? '做多、出場價高於進場價,價格上漲,但損益卻填負數,請確認。' : '做空、出場價低於進場價,價格下跌,但損益卻填負數,請確認。';
   }
-  update();
-}
-$('tab-pairs').onclick = () => setMode('pairs'); $('tab-weekly').onclick = () => setMode('weekly'); $('tab-scan').onclick = () => setMode('scan');
-
-// 月份選單：從這個月開始往後 13 個月
-(() => {
-  const opts = [];
-  const d = P(TODAY); d.setUTCDate(1);
-  for (let i = 0; i < 13; i++) {
-    const v = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-    opts.push(`<option value="${v}">${d.getUTCFullYear()}年${d.getUTCMonth() + 1}月</option>`);
-    d.setUTCMonth(d.getUTCMonth() + 1);
+  if(!expectProfit && p > 0){
+    return direction==='buy' ? '做多、出場價低於進場價,價格下跌,但損益卻填正數,請確認。' : '做空、出場價高於進場價,價格上漲,但損益卻填正數,請確認。';
   }
-  $('sStart').innerHTML = opts.join(''); $('sEnd').innerHTML = opts.join('');
-  $('sStart').selectedIndex = 1; $('sEnd').selectedIndex = 2;
-})();
-let scanBy = 'month';
-let sRange = {a: addDays(TODAY, 7), b: addDays(TODAY, 37)};
-function setScanBy(m){
-  scanBy = m;
-  $('sm-month').setAttribute('aria-pressed', m === 'month'); $('sm-date').setAttribute('aria-pressed', m === 'date');
-  document.querySelectorAll('.sm-m').forEach(el => el.hidden = m !== 'month');
-  document.querySelectorAll('.sm-d').forEach(el => el.hidden = m !== 'date');
-  update();
+  return '';
 }
-$('sm-month').onclick = () => setScanBy('month'); $('sm-date').onclick = () => setScanBy('date');
-function renderSRange(){ $('sRangeBtn').innerHTML = rangeHTML(sRange.a, sRange.b, '從', '到', `共 ${tripDays(sRange.a, sRange.b)} 天`); update(); }
-$('sRangeBtn').onclick = () => openPicker(sRange.a, sRange.b, '選擇要找機票的日期範圍', (a, b) => { sRange = {a, b}; renderSRange(); }, true);
-function scanRange(){
-  if (scanBy === 'date') return [sRange.a, sRange.b];
-  const [y1, m1] = $('sStart').value.split('-').map(Number), [y2, m2] = $('sEnd').value.split('-').map(Number);
-  return [iso(new Date(Date.UTC(y1, m1 - 1, 1))), iso(new Date(Date.UTC(y2, m2, 0)))];
-}
-function scanPairs(){
-  const days = Number($('sDays').value) || 0; if (days < 2) return [];
-  let [first, last] = scanRange();
-  const tomorrow = addDays(TODAY, 1); if (first < tomorrow) first = tomorrow;
-  const out = []; let d = first;
-  while (addDays(d, days - 1) <= last) { out.push([d, addDays(d, days - 1)]); d = addDays(d, 1); }
-  return out;
-}
-const shortDate = v => { const d = P(v); return `${d.getUTCMonth() + 1}/${d.getUTCDate()}(${WD[d.getUTCDay()]})`; };
-['sStart', 'sEnd', 'sDays'].forEach(id => $(id).addEventListener('change', () => {
-  if ($('sEnd').value < $('sStart').value) $('sEnd').value = $('sStart').value;
-  update();
-}));
 
-
-// ── 機場資料：國家|城市|機場名稱|代碼|英文 ──
-const AIRPORT_DATA = `
-台灣|台北|桃園國際機場|TPE|Taipei Taoyuan
-台灣|台北|松山機場|TSA|Taipei Songshan
-台灣|高雄|高雄國際機場|KHH|Kaohsiung
-台灣|台中|台中國際機場|RMQ|Taichung
-台灣|台南|台南機場|TNN|Tainan
-台灣|花蓮|花蓮機場|HUN|Hualien
-台灣|台東|台東豐年機場|TTT|Taitung
-台灣|澎湖|馬公機場|MZG|Penghu Magong
-台灣|金門|尚義機場|KNH|Kinmen
-日本|東京|成田國際機場|NRT|Tokyo Narita
-日本|東京|羽田機場|HND|Tokyo Haneda
-日本|大阪|關西國際機場|KIX|Osaka Kansai
-日本|大阪|伊丹機場|ITM|Osaka Itami
-日本|神戶|神戶機場|UKB|Kobe
-日本|名古屋|中部國際機場|NGO|Nagoya Chubu
-日本|福岡|福岡機場|FUK|Fukuoka
-日本|沖繩|那霸機場|OKA|Okinawa Naha
-日本|石垣島|石垣機場|ISG|Ishigaki
-日本|宮古島|下地島機場|SHI|Miyako Shimojishima
-日本|札幌|新千歲機場|CTS|Sapporo New Chitose
-日本|函館|函館機場|HKD|Hakodate
-日本|旭川|旭川機場|AKJ|Asahikawa
-日本|青森|青森機場|AOJ|Aomori
-日本|仙台|仙台機場|SDJ|Sendai
-日本|新潟|新潟機場|KIJ|Niigata
-日本|茨城|茨城機場|IBR|Ibaraki
-日本|富山|富山機場|TOY|Toyama
-日本|小松|小松機場|KMQ|Komatsu
-日本|靜岡|靜岡機場|FSZ|Shizuoka
-日本|岡山|岡山機場|OKJ|Okayama
-日本|廣島|廣島機場|HIJ|Hiroshima
-日本|高松|高松機場|TAK|Takamatsu
-日本|松山（愛媛）|松山機場|MYJ|Matsuyama
-日本|高知|高知機場|KCZ|Kochi
-日本|熊本|熊本機場|KMJ|Kumamoto
-日本|鹿兒島|鹿兒島機場|KOJ|Kagoshima
-日本|宮崎|宮崎機場|KMI|Miyazaki
-日本|大分|大分機場|OIT|Oita
-日本|長崎|長崎機場|NGS|Nagasaki
-日本|佐賀|佐賀機場|HSG|Saga
-韓國|首爾|仁川國際機場|ICN|Seoul Incheon
-韓國|首爾|金浦國際機場|GMP|Seoul Gimpo
-韓國|釜山|金海國際機場|PUS|Busan Gimhae
-韓國|濟州|濟州國際機場|CJU|Jeju
-韓國|大邱|大邱國際機場|TAE|Daegu
-韓國|清州|清州國際機場|CJJ|Cheongju
-韓國|務安|務安國際機場|MWX|Muan
-香港|香港|香港國際機場|HKG|Hong Kong
-澳門|澳門|澳門國際機場|MFM|Macau
-中國|北京|首都國際機場|PEK|Beijing Capital
-中國|北京|大興國際機場|PKX|Beijing Daxing
-中國|上海|浦東國際機場|PVG|Shanghai Pudong
-中國|上海|虹橋國際機場|SHA|Shanghai Hongqiao
-中國|廣州|白雲國際機場|CAN|Guangzhou
-中國|深圳|寶安國際機場|SZX|Shenzhen
-中國|廈門|高崎國際機場|XMN|Xiamen
-中國|福州|長樂國際機場|FOC|Fuzhou
-中國|杭州|蕭山國際機場|HGH|Hangzhou
-中國|南京|祿口國際機場|NKG|Nanjing
-中國|寧波|櫟社國際機場|NGB|Ningbo
-中國|溫州|龍灣國際機場|WNZ|Wenzhou
-中國|成都|天府國際機場|TFU|Chengdu Tianfu
-中國|成都|雙流國際機場|CTU|Chengdu Shuangliu
-中國|重慶|江北國際機場|CKG|Chongqing
-中國|西安|咸陽國際機場|XIY|Xian
-中國|昆明|長水國際機場|KMG|Kunming
-中國|武漢|天河國際機場|WUH|Wuhan
-中國|長沙|黃花國際機場|CSX|Changsha
-中國|青島|膠東國際機場|TAO|Qingdao
-中國|大連|周水子國際機場|DLC|Dalian
-中國|三亞|鳳凰國際機場|SYX|Sanya
-中國|海口|美蘭國際機場|HAK|Haikou
-泰國|曼谷|蘇凡納布國際機場|BKK|Bangkok Suvarnabhumi
-泰國|曼谷|廊曼國際機場|DMK|Bangkok Don Mueang
-泰國|清邁|清邁國際機場|CNX|Chiang Mai
-泰國|普吉島|普吉國際機場|HKT|Phuket
-泰國|蘇美島|蘇美機場|USM|Koh Samui
-泰國|喀比|喀比國際機場|KBV|Krabi
-越南|胡志明市|新山一國際機場|SGN|Ho Chi Minh City
-越南|河內|內排國際機場|HAN|Hanoi
-越南|峴港|峴港國際機場|DAD|Da Nang
-越南|芽莊|金蘭國際機場|CXR|Nha Trang Cam Ranh
-越南|富國島|富國國際機場|PQC|Phu Quoc
-越南|海防|吉碑國際機場|HPH|Hai Phong
-新加坡|新加坡|樟宜機場|SIN|Singapore Changi
-馬來西亞|吉隆坡|吉隆坡國際機場|KUL|Kuala Lumpur
-馬來西亞|檳城|檳城國際機場|PEN|Penang
-馬來西亞|亞庇|亞庇國際機場|BKI|Kota Kinabalu
-馬來西亞|蘭卡威|蘭卡威國際機場|LGK|Langkawi
-菲律賓|馬尼拉|尼諾伊艾奎諾國際機場|MNL|Manila
-菲律賓|宿霧|麥克坦宿霧國際機場|CEB|Cebu
-菲律賓|克拉克|克拉克國際機場|CRK|Clark
-菲律賓|長灘島|卡利博國際機場|KLO|Boracay Kalibo
-菲律賓|薄荷島|薄荷島邦勞國際機場|TAG|Bohol Panglao
-印尼|峇里島|伍拉賴國際機場|DPS|Bali Denpasar
-印尼|雅加達|蘇卡諾哈達國際機場|CGK|Jakarta
-柬埔寨|金邊|金邊國際機場|KTI|Phnom Penh Techo
-柬埔寨|暹粒（吳哥窟）|吳哥國際機場|SAI|Siem Reap Angkor
-緬甸|仰光|仰光國際機場|RGN|Yangon
-寮國|永珍|瓦岱國際機場|VTE|Vientiane
-印度|德里|英迪拉甘地國際機場|DEL|Delhi
-印度|孟買|賈特拉帕蒂希瓦吉國際機場|BOM|Mumbai
-帛琉|帛琉|帛琉國際機場|ROR|Palau Koror
-關島|關島|關島國際機場|GUM|Guam
-北馬里亞納|塞班|塞班國際機場|SPN|Saipan
-阿聯|杜拜|杜拜國際機場|DXB|Dubai
-阿聯|阿布達比|札耶德國際機場|AUH|Abu Dhabi
-卡達|杜哈|哈馬德國際機場|DOH|Doha
-土耳其|伊斯坦堡|伊斯坦堡機場|IST|Istanbul
-英國|倫敦|希斯洛機場|LHR|London Heathrow
-英國|倫敦|蓋威克機場|LGW|London Gatwick
-法國|巴黎|戴高樂機場|CDG|Paris Charles de Gaulle
-德國|法蘭克福|法蘭克福機場|FRA|Frankfurt
-德國|慕尼黑|慕尼黑機場|MUC|Munich
-荷蘭|阿姆斯特丹|史基浦機場|AMS|Amsterdam Schiphol
-義大利|羅馬|菲烏米奇諾機場|FCO|Rome Fiumicino
-義大利|米蘭|馬爾彭薩機場|MXP|Milan Malpensa
-西班牙|馬德里|巴拉哈斯機場|MAD|Madrid
-西班牙|巴塞隆納|巴塞隆納機場|BCN|Barcelona
-奧地利|維也納|維也納國際機場|VIE|Vienna
-捷克|布拉格|哈維爾機場|PRG|Prague
-瑞士|蘇黎世|蘇黎世機場|ZRH|Zurich
-芬蘭|赫爾辛基|萬塔機場|HEL|Helsinki
-丹麥|哥本哈根|凱斯楚普機場|CPH|Copenhagen
-美國|洛杉磯|洛杉磯國際機場|LAX|Los Angeles
-美國|舊金山|舊金山國際機場|SFO|San Francisco
-美國|西雅圖|塔科馬國際機場|SEA|Seattle
-美國|紐約|甘迺迪國際機場|JFK|New York JFK
-美國|紐約|紐華克機場|EWR|New York Newark
-美國|芝加哥|歐海爾國際機場|ORD|Chicago
-美國|休士頓|喬治布希國際機場|IAH|Houston
-美國|達拉斯|沃斯堡國際機場|DFW|Dallas
-美國|安大略（加州）|安大略國際機場|ONT|Ontario California
-美國|夏威夷|檀香山國際機場|HNL|Honolulu Hawaii
-加拿大|溫哥華|溫哥華國際機場|YVR|Vancouver
-加拿大|多倫多|皮爾遜國際機場|YYZ|Toronto
-澳洲|雪梨|雪梨機場|SYD|Sydney
-澳洲|墨爾本|墨爾本機場|MEL|Melbourne
-澳洲|布里斯本|布里斯本機場|BNE|Brisbane
-澳洲|黃金海岸|黃金海岸機場|OOL|Gold Coast
-澳洲|伯斯|伯斯機場|PER|Perth
-紐西蘭|奧克蘭|奧克蘭機場|AKL|Auckland
-紐西蘭|基督城|基督城機場|CHC|Christchurch
-`.trim().split('\n').map(l => { const [country, city, name, code, en] = l.split('|'); return {country, city, name, code, en}; });
-const AP_BY_CODE = Object.fromEntries(AIRPORT_DATA.map(a => [a.code, a]));
-const COUNTRIES = [...new Set(AIRPORT_DATA.map(a => a.country))];
-const norm = v => v.toLowerCase().replace(/臺/g, '台').replace(/\s+/g, '');
-
-function searchAirports(q){
-  q = norm(q);
-  if (!q) return AIRPORT_DATA;
-  const scored = [];
-  for (const a of AIRPORT_DATA) {
-    let sc = 0;
-    if (norm(a.code) === q) sc = 100;
-    else if (norm(a.city).startsWith(q)) sc = 80;
-    else if (norm(a.country) === q) sc = 70;
-    else if (norm(a.country + a.city).includes(q)) sc = 60;
-    else if (norm(a.name).includes(q)) sc = 50;
-    else if (norm(a.en).includes(q) || norm(a.code).startsWith(q)) sc = 40;
-    else if (norm(a.country + a.city + a.name).includes(q)) sc = 30;
-    if (sc) scored.push([sc, a]);
+function balanceBeforeTrade(acc, excludeId, platformTimeStr){
+  const targetDate = parsePlatformDate(platformTimeStr);
+  const others = acc.trades.filter(t => t.id !== excludeId).map(t => ({ ...t, _d: parsePlatformDate(t.platformTime) }));
+  if(!targetDate){
+    const total = others.reduce((s,t)=>s+totalPnlOf(t),0);
+    return acc.initialCapital + total;
   }
-  // 依分數排，同國家放一起
-  const order = {}; scored.sort((x, y) => y[0] - x[0]).forEach(([, a]) => { if (!(a.country in order)) order[a.country] = Object.keys(order).length; });
-  return scored.sort((x, y) => order[x[1].country] - order[y[1].country] || y[0] - x[0]).map(([, a]) => a);
+  const before = others.filter(t => t._d && t._d < targetDate);
+  const total = before.reduce((s,t)=>s+totalPnlOf(t),0);
+  return acc.initialCapital + total;
 }
 
-function setupAirport(id, initial){
-  const input = $(id), dd = $('dd-' + id), sub = $('sub-' + id);
-  let items = [], active = -1;
-  function choose(a){
-    input.dataset.code = a.code;
-    input.value = `${a.city} ${a.code}`;
-    sub.textContent = `${a.country}　${a.name}`;
-    close();
-  }
-  function setRaw(){
-    // 使用者直接打三個英文字母代碼（清單裡沒有的機場也可以）
-    const m = input.value.trim().match(/^[A-Za-z]{3}$/);
-    if (m) { const c = m[0].toUpperCase(); const a = AP_BY_CODE[c];
-      if (a) return choose(a);
-      input.dataset.code = c; input.value = c; sub.textContent = '自訂機場代碼'; }
-  }
-  function open(){ dd.hidden = false; input.setAttribute('aria-expanded', 'true'); }
-  function close(){ dd.hidden = true; input.setAttribute('aria-expanded', 'false'); active = -1; }
-  function draw(q){
-    items = searchAirports(q); active = q ? 0 : -1;
-    let h = '';
-    if (!q) h += '<div class="dd-countries">' + COUNTRIES.map(c => `<button type="button" data-c="${esc(c)}">${esc(c)}</button>`).join('') + '</div>';
-    if (!items.length) h += `<div class="dd-empty">找不到「${esc(q)}」。如果知道機場代碼，可以直接輸入三個英文字母，例如 PUS。</div>`;
-    let last = '';
-    items.forEach((a, i) => {
-      if (a.country !== last) { h += `<div class="dd-country" data-country="${esc(a.country)}">${esc(a.country)}</div>`; last = a.country; }
-      h += `<div class="dd-item" role="option" id="${id}-opt-${i}" data-i="${i}" aria-selected="${i === active}"><span class="city">${esc(a.city)}</span><span class="name">${esc(a.name)}</span><span class="code">${a.code}</span></div>`;
-    });
-    dd.innerHTML = h; open(); mark();
-  }
-  function mark(){
-    dd.querySelectorAll('.dd-item').forEach(el => el.setAttribute('aria-selected', Number(el.dataset.i) === active));
-    const el = dd.querySelector(`[data-i="${active}"]`);
-    if (el) { el.scrollIntoView({block: 'nearest'}); input.setAttribute('aria-activedescendant', el.id); }
-  }
-  input.addEventListener('focus', () => { input.select(); draw(''); });
-  input.addEventListener('input', () => { delete input.dataset.code; sub.textContent = ''; draw(input.value); });
-  input.addEventListener('keydown', e => {
-    if (dd.hidden) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(items.length - 1, active + 1); mark(); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); mark(); }
-    else if (e.key === 'Enter') { if (active >= 0 && items[active]) { e.preventDefault(); choose(items[active]); } }
-    else if (e.key === 'Escape') close();
-  });
-  input.addEventListener('blur', () => setTimeout(() => {
-    if (dd.contains(document.activeElement)) return;
-    close();
-    if (!input.dataset.code) setRaw();
-  }, 150));
-  dd.addEventListener('mousedown', e => {
-    const c = e.target.closest('[data-c]');
-    if (c) { e.preventDefault(); const head = dd.querySelector(`[data-country="${CSS.escape(c.dataset.c)}"]`); if (head) dd.scrollTop = head.offsetTop - 50; return; }
-    const it = e.target.closest('.dd-item');
-    if (it) { e.preventDefault(); choose(items[Number(it.dataset.i)]); input.blur(); }
-  });
-  if (initial && AP_BY_CODE[initial]) choose(AP_BY_CODE[initial]);
-  return {
-    get: () => input.dataset.code || '',
-    set: (code, text, subText) => { input.dataset.code = code; input.value = text; sub.textContent = subText; },
-    snapshot: () => [input.dataset.code || '', input.value, sub.textContent],
-  };
-}
-const apOrigin = setupAirport('origin', null);
-const apDest = setupAirport('dest', null);
-$('swap').onclick = () => { const a = apOrigin.snapshot(), b = apDest.snapshot(); apOrigin.set(...b); apDest.set(...a); };
+function parseBatchText(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  const records = [];
+  let i = 0;
+  const numRe = /^-?[\d,]+\.?\d*$/;
+  const arrowRe = /^(-?[\d,]+\.?\d*)\s*(?:→|->|~)\s*(-?[\d,]+\.?\d*)/;
+  const dateRe = /^(\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2}\s+\d{1,2}:\d{1,2}:\d{1,2})/;
+  const dirRe = /^(buy|sell)$/i;
+  const pairRe = /^(?=.*[A-Z])[A-Z0-9]{3,10}$/i;
 
+  while(i < lines.length){
+    let pair = null, direction = null, lots = null, pnl = null;
+    const combined = lines[i].match(/^([A-Z0-9]{3,10})\s+(buy|sell)\s+([\d.]+)\s*(-?[\d,]+\.?\d*)?$/i);
+    if(combined){
+      pair = combined[1].toUpperCase(); direction = combined[2].toLowerCase(); lots = combined[3];
+      pnl = combined[4] ? combined[4].replace(/,/g,'') : null;
+      i++;
+    } else if(pairRe.test(lines[i]) && !numRe.test(lines[i]) && !dateRe.test(lines[i]) && !dirRe.test(lines[i]) && lines[i+1] && dirRe.test(lines[i+1])){
+      pair = lines[i].toUpperCase(); direction = lines[i+1].toLowerCase(); i += 2;
+    } else { i++; continue; }
 
-function weeklyCount(){
-  const s = wRange.a, e = wRange.b; if (!s || !e || e < s) return 0;
-  let d = new Date(s + 'T00:00:00Z'); const want = Number($('wDay').value) % 7; let n = 0;
-  while (d.getUTCDay() !== want) d.setUTCDate(d.getUTCDate() + 1);
-  while (iso(d) <= e) { n++; d.setUTCDate(d.getUTCDate() + 7); }
-  return n;
+    let numbers = []; let arrow = null; let dates = [];
+    while(i < lines.length){
+      const dm = lines[i].match(dateRe);
+      if(dm){ dates.push(dm[1]); i++; continue; }
+      const am = lines[i].match(arrowRe);
+      if(am){ arrow = [am[1].replace(/,/g,''), am[2].replace(/,/g,'')]; i++; continue; }
+      if(numRe.test(lines[i].replace(/,/g,''))){ numbers.push(lines[i].replace(/,/g,'')); i++; continue; }
+      break;
+    }
+    // 一個日期時,視為平倉時間(向下相容原本格式);兩個日期時,第一個是開倉、第二個是平倉
+    let openTime = '', platformTime = '';
+    if(dates.length >= 2){ openTime = dates[0]; platformTime = dates[1]; }
+    else if(dates.length === 1){ platformTime = dates[0]; }
+    let entry = '', exit = '';
+    if(arrow){
+      entry = arrow[0]; exit = arrow[1];
+      if(pnl === null && numbers.length >= 1) pnl = numbers[numbers.length-1];
+    } else if(numbers.length === 4){
+      entry = numbers[0]; exit = numbers[1];
+      if(lots === null) lots = numbers[2];
+      if(pnl === null) pnl = numbers[3];
+    } else if(numbers.length === 3){
+      entry = numbers[0]; exit = numbers[1];
+      if(pnl === null) pnl = numbers[2];
+    } else if(numbers.length === 2 && lots !== null){
+      entry = numbers[0]; exit = numbers[1];
+    }
+    records.push({ pair, direction, lots: lots||'', entry, exit, pnl: pnl||'', openTime, platformTime, include: true });
+  }
+  return records;
 }
-function pairCount(){ return mode === 'pairs' ? pairs.length : mode === 'weekly' ? weeklyCount() : scanPairs().length; }
-function update(){
-  const n = pairCount();
-  if (mode === 'weekly') $('wCount').textContent = n ? `共 ${n} 組日期` : '這個範圍裡沒有符合的日期';
-  if (mode === 'scan') {
-    const sp = scanPairs();
-    $('sCount').textContent = sp.length
-      ? `共 ${sp.length} 個出發日：最早 ${shortDate(sp[0][0])} 出發、${shortDate(sp[0][1])} 回來；最晚 ${shortDate(sp[sp.length - 1][0])} 出發、${shortDate(sp[sp.length - 1][1])} 回來。`
-      : '這個區間放不下這麼多天的行程，請調整。';
-    $('estimate').textContent = n ? `${n} 個出發日，大約需要 ${Math.max(1, Math.round((n * 9 + Math.min(10, n) * 6) / 60))} 分鐘` : '';
+
+// ====== 認證 ======
+let authMode = 'login'; // 'login' | 'signup' | 'forgot'
+
+function showAuthError(msg){
+  const box = document.getElementById('authError');
+  box.textContent = msg;
+  box.classList.add('show');
+}
+function clearAuthError(){
+  document.getElementById('authError').classList.remove('show');
+}
+function applyAuthMode(){
+  clearAuthError();
+  document.getElementById('confirmNotice').style.display = 'none';
+  document.getElementById('resetSentNotice').style.display = 'none';
+  const pwWrap = document.getElementById('passwordFieldWrap');
+  const extraLinks = document.getElementById('loginExtraLinks');
+  if(authMode === 'forgot'){
+    pwWrap.style.display = 'none';
+    extraLinks.style.display = 'none';
+    document.getElementById('loginBtn').textContent = '寄送重設密碼信';
+    document.getElementById('signupLink').textContent = '改為登入';
+    document.getElementById('authSubtitle').textContent = '輸入註冊時的 email,寄送重設密碼連結';
+  } else if(authMode === 'signup'){
+    pwWrap.style.display = 'block';
+    extraLinks.style.display = 'block';
+    document.getElementById('loginBtn').textContent = '註冊';
+    document.getElementById('signupLink').textContent = '改為登入';
+    document.getElementById('authSubtitle').textContent = '建立新帳號';
+  } else {
+    pwWrap.style.display = 'block';
+    extraLinks.style.display = 'block';
+    document.getElementById('loginBtn').textContent = '登入';
+    document.getElementById('signupLink').textContent = '註冊';
+    document.getElementById('authSubtitle').textContent = '登入後開始記錄你的交易';
+  }
+}
+
+document.getElementById('signupLink').onclick = (e) => {
+  e.preventDefault();
+  authMode = (authMode === 'signup') ? 'login' : 'signup';
+  applyAuthMode();
+};
+document.getElementById('forgotLink').onclick = (e) => {
+  e.preventDefault();
+  authMode = 'forgot';
+  applyAuthMode();
+};
+
+document.getElementById('loginBtn').onclick = async () => {
+  clearAuthError();
+  document.getElementById('confirmNotice').style.display = 'none';
+  document.getElementById('resetSentNotice').style.display = 'none';
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  if(authMode === 'forgot'){
+    if(!email){ showAuthError('請輸入 email。'); return; }
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.innerHTML = '<span class="spinner"></span>處理中';
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    btn.disabled = false; btn.textContent = originalText;
+    if(error){ showAuthError(error.message); return; }
+    document.getElementById('resetSentNotice').style.display = 'block';
     return;
   }
-  const per = $('full').checked ? 11 : 7;
-  $('estimate').textContent = n ? `${n} 組日期，大約需要 ${Math.max(1, Math.round(n * per * 4 / 60))} 分鐘` : '';
-}
-renderPairs(); renderWeekly(); renderSRange();
 
-const hour = id => $(id).value === '' ? null : Number($(id).value);
+  if(!email || !password){ showAuthError('請輸入 email 和密碼。'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span>處理中';
 
-function weeklyPairs(){
-  const out = []; const s = wRange.a, e = wRange.b; if (!s || !e || e < s) return out;
-  let d = P(s); const want = Number($('wDay').value) % 7; const nights = Math.max(1, (Number($('wNights').value) || 2) - 1);
-  while (d.getUTCDay() !== want) d.setUTCDate(d.getUTCDate() + 1);
-  while (iso(d) <= e) { out.push([iso(d), addDays(iso(d), nights)]); d.setUTCDate(d.getUTCDate() + 7); }
-  return out;
-}
-function apInfo(code){
-  const a = AP_BY_CODE[code];
-  return a ? {big: `${a.city} ${a.code}`, sub: `${a.country}　${a.name}`} : {big: code, sub: '自訂機場代碼'};
-}
-const hh = v => String(v).padStart(2, '0') + ':00';
-function hourText(f, t){ return f == null && t == null ? '' : `${f == null ? '00:00' : hh(f)}～${t == null ? '23:59' : hh(t) .replace(':00', ':59')}`; }
+  if(authMode === 'signup'){
+    const { data, error } = await sb.auth.signUp({ email, password });
+    btn.disabled = false; btn.textContent = originalText;
+    if(error){ showAuthError(error.message); return; }
+    document.getElementById('confirmNotice').style.display = 'block';
+  } else {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    btn.disabled = false; btn.textContent = originalText;
+    if(error){ showAuthError(error.message); return; }
+    await enterApp();
+  }
+};
 
-let pendingBody = null;
-function showConfirm(body){
-  const o = apInfo(body.origin), d = apInfo(body.dest);
-  const list = body.mode === 'pairs' ? body.pairs : body.mode === 'scan' ? scanPairs() : weeklyPairs();
-  const show = list.slice(0, 12);
-  let h = `<div class="cf-route">
-      <div class="cf-ap"><b>${esc(o.big)}</b><span>${esc(o.sub)}</span></div>
-      <div class="cf-arrow" aria-hidden="true">⇄</div>
-      <div class="cf-ap"><b>${esc(d.big)}</b><span>${esc(d.sub)}</span></div></div>`;
-  if (body.mode === 'scan') {
-    let rangeText;
-    if (body.startDate) rangeText = `${longDate(body.startDate)} ～ ${longDate(body.endDate)}`;
-    else { const [y1, m1] = body.startMonth.split('-'), [y2, m2] = body.endMonth.split('-'); rangeText = `${y1}年${Number(m1)}月～${y2}年${Number(m2)}月`; }
-    h += `<div class="cf-sec"><h4>日期</h4><p style="margin:0"><b>${rangeText}</b>，每天出發、玩 <b>${body.days} 天</b><br>` +
-      `<span class="hint">共 ${list.length} 個出發日（${shortDate(list[0][0])} ～ ${shortDate(list[list.length - 1][0])} 出發），去程和回程都在區間內。結果列出最便宜的前 10 名。</span></p></div>`;
-  } else
-  h += `<div class="cf-sec"><h4>日期（共 ${list.length} 組）</h4><ul class="cf-dates">` +
-    show.map(([a, b]) => `<li><b>${longDate(a)}</b> － <b>${longDate(b)}</b><span class="d">${tripDays(a, b)} 日行程</span></li>`).join('') +
-    (list.length > show.length ? `<li class="d">…還有 ${list.length - show.length} 組</li>` : '') + '</ul></div>';
-  const tags = [];
-  tags.push({0: '只要直飛', 1: '最多轉 1 次', any: '轉機不限'}[body.stops] || '轉機不限');
-  tags.push(`大人 ${body.adults} 位`);
-  const ot = hourText(body.outFrom, body.outTo), rt = hourText(body.retFrom, body.retTo);
-  if (ot) tags.push(`去程 ${ot} 出發`); if (rt) tags.push(`回程 ${rt} 出發`);
-  if (body.full) tags.push('列出所有去回組合');
-  let tagHTML = tags.map(t => `<span>${esc(t)}</span>`).join('');
-  if (body.demo) tagHTML += '<span class="warn">示範模式：假資料，不會真的查</span>';
-  h += `<div class="cf-sec"><h4>條件</h4><div class="cf-tags">${tagHTML}</div></div>`;
-  h += `<p class="hint" style="margin:0">${$('estimate').textContent}</p>`;
-  $('cf-body').innerHTML = h;
-  pendingBody = body;
-  $('cf').hidden = false; document.body.style.overflow = 'hidden'; $('cf-go').focus();
-}
-function closeConfirm(){ $('cf').hidden = true; document.body.style.overflow = ''; }
-$('cf-back').onclick = closeConfirm;
-$('cf').addEventListener('click', e => { if (e.target.id === 'cf') closeConfirm(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('cf').hidden) closeConfirm(); });
-$('cf-go').onclick = () => { closeConfirm(); if (pendingBody) startSearch(pendingBody); };
+document.getElementById('logoutBtn').onclick = async () => {
+  await sb.auth.signOut();
+  document.getElementById('appWrap').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  accounts = []; activeId = null;
+};
 
-$('form').onsubmit = e => {
-  e.preventDefault();
-  const origin = apOrigin.get(), dest = apDest.get();
-  if (!origin) { $('origin').focus(); return showErr('請先選擇出發地，例如輸入「台北」再從清單點選。'); }
-  if (!dest) { $('dest').focus(); return showErr('請先選擇目的地，例如輸入「釜山」再從清單點選。'); }
-  if (origin === dest) return showErr('出發地和目的地不能一樣。');
-  const body = {
-    origin, dest, mode, stops: $('stops').value, adults: Number($('adults').value),
-    full: $('full').checked, demo: $('demo').checked,
-    outFrom: hour('outFrom'), outTo: hour('outTo'), retFrom: hour('retFrom'), retTo: hour('retTo'),
+// ====== 修改密碼(登入後) ======
+document.getElementById('changePwBtn').onclick = () => {
+  document.getElementById('newAccForm').style.display = 'none';
+  document.getElementById('editAccForm').style.display = 'none';
+  document.getElementById('changePwInput1').value = '';
+  document.getElementById('changePwInput2').value = '';
+  document.getElementById('changePwError').classList.remove('show');
+  document.getElementById('changePwSuccess').style.display = 'none';
+  document.getElementById('changePwForm').style.display = 'block';
+};
+document.getElementById('cancelChangePw').onclick = () => { document.getElementById('changePwForm').style.display = 'none'; };
+document.getElementById('saveChangePw').onclick = async () => {
+  const errBox = document.getElementById('changePwError');
+  errBox.classList.remove('show');
+  document.getElementById('changePwSuccess').style.display = 'none';
+  const p1 = document.getElementById('changePwInput1').value;
+  const p2 = document.getElementById('changePwInput2').value;
+  if(!p1 || p1.length < 6){ errBox.textContent = '密碼至少需要 6 碼。'; errBox.classList.add('show'); return; }
+  if(p1 !== p2){ errBox.textContent = '兩次輸入的密碼不一致。'; errBox.classList.add('show'); return; }
+  const btn = document.getElementById('saveChangePw');
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span>更新中';
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  if(error){
+    btn.disabled = false; btn.textContent = originalText;
+    errBox.textContent = error.message; errBox.classList.add('show');
+    return;
+  }
+  // 密碼改成功後,強制所有裝置(含目前這台)登出,確保舊裝置的登入狀態不會留著
+  await sb.auth.signOut({ scope: 'global' });
+  btn.disabled = false; btn.textContent = originalText;
+  document.getElementById('changePwForm').style.display = 'none';
+  document.getElementById('appWrap').style.display = 'none';
+  accounts = []; activeId = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  authMode = 'login';
+  applyAuthMode();
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('confirmNotice').textContent = '密碼已更新,所有裝置都已登出,請用新密碼重新登入。';
+  document.getElementById('confirmNotice').style.display = 'block';
+};
+
+// ====== 重設密碼(從信件連結點回來) ======
+document.getElementById('submitNewPasswordBtn').onclick = async () => {
+  const errBox = document.getElementById('resetError');
+  errBox.classList.remove('show');
+  const p1 = document.getElementById('newPassword1').value;
+  const p2 = document.getElementById('newPassword2').value;
+  if(!p1 || p1.length < 6){ errBox.textContent = '密碼至少需要 6 碼。'; errBox.classList.add('show'); return; }
+  if(p1 !== p2){ errBox.textContent = '兩次輸入的密碼不一致。'; errBox.classList.add('show'); return; }
+  const btn = document.getElementById('submitNewPasswordBtn');
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span>處理中';
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  btn.disabled = false; btn.textContent = originalText;
+  if(error){ errBox.textContent = error.message; errBox.classList.add('show'); return; }
+  alert('密碼已更新,請用新密碼登入。');
+  document.getElementById('resetPasswordScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  authMode = 'login';
+  applyAuthMode();
+  history.replaceState(null, '', window.location.pathname);
+};
+
+async function enterApp(){
+  const { data: { user } } = await sb.auth.getUser();
+  currentUser = user;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('resetPasswordScreen').style.display = 'none';
+  document.getElementById('appWrap').style.display = 'block';
+  await loadAccountsFromDb();
+  render();
+}
+
+// 判斷網址是不是「重設密碼」連結點回來的(Supabase 會在網址帶 type=recovery)
+function isRecoveryLink(){
+  return window.location.hash.includes('type=recovery') || window.location.search.includes('type=recovery');
+}
+
+// 檢查是否已經是登入狀態(例如驗證信點回來)
+(async () => {
+  if(isRecoveryLink()){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('resetPasswordScreen').style.display = 'flex';
+    return;
+  }
+  const { data: { session } } = await sb.auth.getSession();
+  if(session && session.user){
+    await enterApp();
+  }
+})();
+
+// ====== 資料存取(Supabase) ======
+async function loadAccountsFromDb(){
+  const { data: accData, error: accErr } = await sb
+    .from('accounts')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if(accErr){ alert('讀取帳戶失敗:' + accErr.message); return; }
+
+  const { data: tradeData, error: tradeErr } = await sb
+    .from('trades')
+    .select('*');
+  if(tradeErr){ alert('讀取交易紀錄失敗:' + tradeErr.message); return; }
+
+  accounts = (accData||[]).map(a => ({
+    id: a.id,
+    name: a.name,
+    initialCapital: Number(a.initial_capital),
+    trades: (tradeData||[]).filter(t => t.account_id === a.id).map(t => ({
+      id: t.id,
+      pair: t.pair, direction: t.direction, entry: t.entry, exit: t.exit,
+      lots: t.lots, pnl: t.pnl, storageFee: t.storage_fee, riskPercent: t.risk_percent,
+      openTime: t.open_time, platformTime: t.platform_time, note: t.note, images: t.images || []
+    }))
+  }));
+  accounts.forEach(a=>a.trades.forEach(t=>{ if(t.pair && !pairList.includes(t.pair)) pairList.push(t.pair); }));
+  if(!activeId && accounts.length>0) activeId = accounts[0].id;
+}
+
+async function createAccountRemote(name, initialCapital){
+  const { data, error } = await sb.from('accounts').insert({
+    user_id: currentUser.id, name, initial_capital: initialCapital
+  }).select().single();
+  if(error){ alert('建立帳戶失敗:' + error.message); return null; }
+  return { id: data.id, name: data.name, initialCapital: Number(data.initial_capital), trades: [] };
+}
+
+async function deleteAccountRemote(id){
+  const { error } = await sb.from('accounts').delete().eq('id', id);
+  if(error){ alert('刪除帳戶失敗:' + error.message); return false; }
+  return true;
+}
+
+async function updateAccountRemote(id, name, initialCapital){
+  const { data, error } = await sb.from('accounts')
+    .update({ name, initial_capital: initialCapital })
+    .eq('id', id).select().single();
+  if(error){ alert('更新帳戶失敗:' + error.message); return null; }
+  return data;
+}
+
+async function uploadImages(files){
+  const urls = [];
+  for(const file of files){
+    const ext = (file.name && file.name.split('.').pop()) || 'png';
+    const path = currentUser.id + '/' + uid() + '.' + ext;
+    const { error } = await sb.storage.from(IMAGE_BUCKET).upload(path, file);
+    if(error){ alert('圖片上傳失敗:' + error.message); continue; }
+    const { data } = sb.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+    urls.push(data.publicUrl);
+  }
+  return urls;
+}
+
+function pathFromPublicUrl(url){
+  const marker = '/object/public/' + IMAGE_BUCKET + '/';
+  const idx = url.indexOf(marker);
+  if(idx === -1) return null;
+  return url.slice(idx + marker.length);
+}
+
+async function deleteImagesFromStorage(urls){
+  const paths = urls.map(pathFromPublicUrl).filter(Boolean);
+  if(paths.length === 0) return;
+  const { data, error } = await sb.storage.from(IMAGE_BUCKET).remove(paths);
+  if(error){
+    alert('刪除圖片失敗(權限或網路問題):' + error.message);
+    console.error('刪除圖片失敗:', error, '嘗試刪除的路徑:', paths);
+    return;
+  }
+  if(!data || data.length < paths.length){
+    console.warn('部分圖片可能沒有真的被刪除,預期 '+paths.length+' 筆,實際回報 '+(data?data.length:0)+' 筆。', paths, data);
+  }
+}
+
+async function deleteTradeRemote(tradeId, images){
+  if(images && images.length) await deleteImagesFromStorage(images);
+  const { error } = await sb.from('trades').delete().eq('id', tradeId);
+  if(error){ alert('刪除交易失敗:' + error.message); return false; }
+  return true;
+}
+
+async function saveTradeRemote(accountId, draft, tradeId){
+  const row = {
+    account_id: accountId,
+    pair: draft.pair, direction: draft.direction,
+    entry: draft.entry === '' ? null : Number(draft.entry),
+    exit: draft.exit === '' ? null : Number(draft.exit),
+    lots: draft.lots === '' ? null : Number(draft.lots),
+    pnl: draft.pnl === '' ? null : Number(draft.pnl),
+    storage_fee: draft.storageFee === '' ? null : Number(draft.storageFee),
+    risk_percent: draft.riskPercent === '' ? null : Number(draft.riskPercent),
+    open_time: draft.openTime || null,
+    platform_time: draft.platformTime,
+    note: draft.note || null,
+    images: draft.images
   };
-  if (mode === 'pairs') {
-    body.pairs = pairs.map(p => [p.a, p.b]);
-  } else if (mode === 'scan') {
-    const n = scanPairs().length;
-    if (!n) return showErr('這個區間放不下這麼多天的行程，請調整。');
-    if (n > 120) return showErr(`一次最多掃描 120 個出發日，目前有 ${n} 個，請縮短月份區間。`);
-    if (scanBy === 'date') Object.assign(body, {startDate: sRange.a, endDate: sRange.b, days: Number($('sDays').value)});
-    else Object.assign(body, {startMonth: $('sStart').value, endMonth: $('sEnd').value, days: Number($('sDays').value)});
+  if(tradeId){
+    const { data, error } = await sb.from('trades').update(row).eq('id', tradeId).select().single();
+    if(error){ alert('更新交易失敗:' + error.message); return null; }
+    return data;
   } else {
-    Object.assign(body, {start: wRange.a, end: wRange.b, weekday: Number($('wDay').value), nights: Math.max(1, (Number($('wNights').value) || 2) - 1)});
-    if (!weeklyCount()) return showErr('這個日期範圍裡沒有符合的出發日，請調整。');
+    const { data, error } = await sb.from('trades').insert(row).select().single();
+    if(error){ alert('新增交易失敗:' + error.message); return null; }
+    return data;
   }
-  $('err').hidden = true;
-  showConfirm(body);
+}
+
+async function bulkUpdateRiskPercent(updates){
+  // updates: [{ id, riskPercent }]
+  for(const u of updates){
+    const { error } = await sb.from('trades').update({ risk_percent: u.riskPercent }).eq('id', u.id);
+    if(error){ console.error('更新風控失敗(id='+u.id+'):', error.message); }
+  }
+}
+
+async function insertTradesBatchRemote(accountId, drafts){
+  const rows = drafts.map(r => ({
+    account_id: accountId, pair: r.pair, direction: r.direction,
+    entry: r.entry === '' ? null : Number(r.entry),
+    exit: r.exit === '' ? null : Number(r.exit),
+    lots: r.lots === '' ? null : Number(r.lots),
+    pnl: r.pnl === '' ? null : Number(r.pnl),
+    storage_fee: null, risk_percent: null,
+    open_time: r.openTime || null,
+    platform_time: r.platformTime, images: []
+  }));
+  const { data, error } = await sb.from('trades').insert(rows).select();
+  if(error){ alert('批次匯入失敗:' + error.message); return []; }
+  return data;
+}
+
+// ====== UI 邏輯(與資料層互動) ======
+document.getElementById('menuBtn').onclick = () => {
+  const m = document.getElementById('accMenu');
+  m.classList.toggle('show');
+  renderMenu();
+};
+document.getElementById('newAccBtn').onclick = () => { document.getElementById('editAccForm').style.display='none'; document.getElementById('newAccForm').style.display='block'; };
+document.getElementById('cancelAcc').onclick = () => { document.getElementById('newAccForm').style.display='none'; };
+document.getElementById('createAcc').onclick = async () => {
+  const name = document.getElementById('accNameInput').value.trim();
+  const cap = document.getElementById('accCapInput').value;
+  if(!name || cap==='') return;
+  const btn = document.getElementById('createAcc');
+  btn.disabled = true;
+  const acc = await createAccountRemote(name, Number(cap));
+  btn.disabled = false;
+  if(!acc) return;
+  accounts.unshift(acc);
+  activeId = acc.id;
+  document.getElementById('accNameInput').value='';
+  document.getElementById('accCapInput').value='';
+  document.getElementById('newAccForm').style.display='none';
+  render();
 };
 
-async function startSearch(body){
-  notesShown = false; $('npb').hidden = true;
-  $('results').hidden = true; $('alf').hidden = true; lastAsk = null; chosen = null; lastResult = null;
-  const r = await fetch('/search', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-  if (!r.ok) { const j = await r.json().catch(() => ({})); return showErr(j.error || '無法開始查詢。'); }
-  $('goBtn').disabled = true; $('goBtn').textContent = '查詢中…'; $('progress').hidden = false;
-  $('stopBtn').hidden = false; $('stopBtn').disabled = false; $('stopBtn').textContent = '■ 停止'; $('note').hidden = true;
-  poll();
-}
-
-function excelUrl(f){ return '/download?f=' + encodeURIComponent(f); }
-function showErr(msg){ $('err').textContent = msg; $('err').hidden = false; }
-
-async function poll(){
-  let s;
-  try { s = await (await fetch('/status')).json(); }
-  catch { showErr('和程式的連線中斷了。請確認終端機裡的程式還在執行。'); return done(); }
-  $('log').textContent = s.logs.slice(-6).join('\n');
-  $('barFill').style.width = s.total ? (Math.max(0, s.step - (s.running ? 1 : 0)) / s.total * 100) + '%' : '3%';
-  if (s.running) return setTimeout(poll, 1000);
-  done();
-  if (s.error) return showErr(s.error);
-  if (s.stopped) {
-    $('note').textContent = s.result ? '已停止。下面是停止前已經查完的日期，可以修改條件後重新搜尋。' : '已停止，可以修改條件後重新搜尋。';
-    $('note').hidden = false;
-  }
-  if (s.notes && s.notes.length && !notesShown) {
-    notesShown = true;
-    return showNoPrice(s.notes, () => finish(s));
-  }
-  finish(s);
-}
-
-// ── 沒價格的航空：跳視窗提醒 ──
-let notesShown = false;
-const cityOf = code => { const a = AP_BY_CODE[code]; return a ? `${a.city} ${code}` : code; };
-function noteParts(n){
-  const t = esc(n).replace(/\b([A-Z]{3}) → ([A-Z]{3})\b/, (m, a, b) => `${esc(cityOf(a))} → ${esc(cityOf(b))}`);
-  const i = t.indexOf('：');
-  return i > 0 ? [t.slice(0, i), t.slice(i + 1)] : [t, ''];
-}
-function showBanner(notes){
-  if (!notes || !notes.length) { $('npb').hidden = true; return; }
-  $('npb').innerHTML = '<h3>⚠️ 以下航空公司查不到價格，沒有列進表格</h3><ul>' +
-    notes.map(n => `<li><b>${noteParts(n)[0]}</b></li>`).join('') +
-    '</ul><p>它們有飛這條航線，可能更便宜。請點表格左邊的日期，到 Google Flights 查看價格。</p>';
-  $('npb').hidden = false;
-}
-function showNoPrice(notes, then){
-  showBanner(notes);
-  $('nf-list').innerHTML = notes.map(n => { const [a, b] = noteParts(n); return `<div><b>${a}</b><br>${b}</div>`; }).join('');
-  $('nf').hidden = false; document.body.style.overflow = 'hidden'; $('nf-ok').focus();
-  $('nf-ok').onclick = () => { $('nf').hidden = true; document.body.style.overflow = ''; then(); };
-}
-
-function finish(s){
-  if (s.ask) { lastResult = s.result; lastFile = s.file; lastAsk = s.ask; chosen = null; return askAirlines(); }
-  if (s.result) {
-    if (s.result.kind === 'scan') { chosen = s.result.chosen; showChips(s.result.all.length); renderScan(s.result, s.file); }
-    else { lastResult = s.result; lastFile = s.file; render(s.result, s.file); $('alf').hidden = true; }
-  }
-}
-
-// ── 選航空公司 ──
-let lastResult = null, lastFile = null, lastAsk = null, chosen = null;
-function askAirlines(){
-  const A = lastAsk.airlines, sel = new Set(chosen || A.map(a => a.name));
-  $('al-hint').textContent = lastAsk.kind === 'scan'
-    ? `掃描完成，共找到 ${A.length} 家航空公司。勾選要比較的，確定後會排出最便宜前 10 名並補查回程時間（約 1 分鐘）。`
-    : `共找到 ${A.length} 家航空公司。勾選要比較的，其他的會從表格和 Excel 拿掉。`;
-  $('al-list').innerHTML = A.map(a => `<label><input type="checkbox" value="${esc(a.name)}" ${sel.has(a.name) ? 'checked' : ''}>` +
-    `<span class="n">${esc(a.name)}</span><span class="pr">${a.price != null ? '最低 ' + fmt(a.price) : '<span class="hint">價格未提供</span>'}</span><span class="c">${a.count} 天有班機</span></label>`).join('');
-  alCount();
-  $('al').hidden = false; document.body.style.overflow = 'hidden'; $('al-go').focus();
-}
-function alPicked(){ return [...document.querySelectorAll('#al-list input:checked')].map(i => i.value); }
-function alCount(){ const n = alPicked().length; $('al-count').textContent = `已選 ${n} 家`; $('al-go').disabled = !n; }
-$('al-list').addEventListener('change', alCount);
-$('al-all').onclick = () => { document.querySelectorAll('#al-list input').forEach(i => i.checked = true); alCount(); };
-$('al-none').onclick = () => { document.querySelectorAll('#al-list input').forEach(i => i.checked = false); alCount(); };
-function closeAl(){ $('al').hidden = true; document.body.style.overflow = ''; }
-$('al-go').onclick = async () => {
-  const pick = alPicked(); if (!pick.length) return;
-  closeAl(); chosen = pick;
-  const r = await fetch('/choose', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({airlines: pick})});
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) return showErr(j.error || '無法套用選擇。');
-  if (lastAsk.kind === 'normal') {
-    lastFile = j.file; showChips(lastAsk.airlines.length);
-    render(filterNormal(lastResult, pick), j.file);
-  } else {
-    $('goBtn').disabled = true; $('goBtn').textContent = '查詢中…'; $('progress').hidden = false;
-    $('stopBtn').hidden = false; $('stopBtn').disabled = false; $('stopBtn').textContent = '■ 停止';
-    $('results').hidden = true; poll();
-  }
+document.getElementById('editAccBtn').onclick = () => {
+  const acc = accounts.find(a=>a.id===activeId);
+  if(!acc) return;
+  document.getElementById('newAccForm').style.display = 'none';
+  document.getElementById('editAccNameInput').value = acc.name;
+  document.getElementById('editAccCapInput').value = acc.initialCapital;
+  document.getElementById('editAccForm').style.display = 'block';
 };
-function showChips(total){
-  $('alfText').textContent = `航空公司：${chosen.join('、')}（${chosen.length}/${total} 家）`;
-  $('alf').hidden = false;
-}
-$('alfBtn').onclick = () => { if (lastAsk) askAirlines(); };
-function filterNormal(data, keep){
-  const k = new Set(keep);
-  return {...data, airlines: data.airlines.filter(a => k.has(a)),
-    pairs: data.pairs.map(p => ({...p, airlines: Object.fromEntries(Object.entries(p.airlines).filter(([a]) => k.has(a))),
-      combos: p.combos.filter(c => k.has(c.airline))}))};
-}
-function done(){ $('goBtn').disabled = false; $('goBtn').textContent = '搜尋'; $('stopBtn').hidden = true; }
-$('stopBtn').onclick = async () => {
-  $('stopBtn').disabled = true; $('stopBtn').textContent = '停止中…';
-  try { await fetch('/cancel', {method: 'POST'}); } catch {}
+document.getElementById('cancelEditAcc').onclick = () => { document.getElementById('editAccForm').style.display='none'; };
+document.getElementById('saveEditAcc').onclick = async () => {
+  const acc = accounts.find(a=>a.id===activeId);
+  if(!acc) return;
+  const name = document.getElementById('editAccNameInput').value.trim();
+  const cap = document.getElementById('editAccCapInput').value;
+  if(!name || cap==='') return;
+  const btn = document.getElementById('saveEditAcc');
+  btn.disabled = true;
+  const updated = await updateAccountRemote(acc.id, name, Number(cap));
+  btn.disabled = false;
+  if(!updated) return;
+  acc.name = updated.name;
+  acc.initialCapital = Number(updated.initial_capital);
+  document.getElementById('editAccForm').style.display = 'none';
+  render();
+};
+document.getElementById('deleteAccBtn').onclick = async () => {
+  const acc = accounts.find(a=>a.id===activeId);
+  if(!acc) return;
+  const confirmed = confirm('確定要刪除「'+acc.name+'」這個帳戶嗎?底下所有交易紀錄與截圖也會一併刪除,此動作無法復原。');
+  if(!confirmed) return;
+  const doubleConfirmed = confirm('再次確認:真的要永久刪除「'+acc.name+'」嗎?');
+  if(!doubleConfirmed) return;
+  const btn = document.getElementById('deleteAccBtn');
+  btn.disabled = true;
+  const allImages = acc.trades.flatMap(t => t.images || []);
+  if(allImages.length) await deleteImagesFromStorage(allImages);
+  const ok = await deleteAccountRemote(acc.id);
+  btn.disabled = false;
+  if(!ok) return;
+  accounts = accounts.filter(a=>a.id!==acc.id);
+  activeId = accounts.length>0 ? accounts[0].id : null;
+  document.getElementById('editAccForm').style.display = 'none';
+  render();
 };
 
-function renderScan(data, file){
-  const T = data.top;
-  $('comboBox').hidden = true; $('grid').parentElement.hidden = true; $('scanBox').hidden = false;
-  document.querySelector('.legend').hidden = true;
-  if (!T.length) { showErr('沒有找到航班。可以試試放寬轉機條件、出發時段，或換個月份。'); return; }
-  const b = T[0];
-  $('cheap').innerHTML = `最便宜：${esc(b.d1label)}～${esc(b.d2label)}　${esc(b.airline)}　<b>${fmt(b.price)}</b>`;
-  if (file) { $('dl').href = excelUrl(file); $('dl').hidden = false; } else $('dl').hidden = true;
+function renderMenu(){
+  const m = document.getElementById('accMenu');
+  if(accounts.length===0){
+    m.innerHTML = '<div style="padding:10px 8px;font-size:13px;color:#898781;">還沒有帳戶</div>';
+    return;
+  }
+  m.innerHTML = '';
+  accounts.forEach(a=>{
+    const b = document.createElement('button');
+    b.className = 'acc-item';
+    b.style.background = a.id===activeId ? '#f0efe9' : 'transparent';
+    b.innerHTML = '<div style="font-weight:600;">'+a.name+'</div><div style="font-size:11px;color:#898781;">起始 '+fmtMoney(a.initialCapital)+'</div>';
+    b.onclick = () => { activeId = a.id; selectedDateStart = null; selectedDateEnd = null; pieFilterPair = null; m.classList.remove('show'); render(); };
+    m.appendChild(b);
+  });
+}
 
-  $('top10').innerHTML = '<thead><tr><th>名次</th><th>日期</th><th>航空公司</th><th>去程</th><th>回程</th><th>來回價</th></tr></thead><tbody>' +
-    T.map((t, i) => `<tr><td class="rank">${i + 1}</td>` +
-      `<td><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.d1label)} ～ ${esc(t.d2label)}</a></td>` +
-      `<td>${esc(t.airline)}</td><td>${esc(t.out)}</td>` +
-      `<td class="${t.retOk ? '' : 'oneway'}">${t.ret ? esc(t.ret) : '<span class="hint">未查到</span>'}</td>` +
-      `<td class="p best ${i === 0 ? 'top' : ''}">${fmt(t.price)}</td></tr>`).join('') + '</tbody>';
+function renderCalendar(acc){
+  const wrap = document.getElementById('calendarView');
+  const year = calMonth.getFullYear();
+  const month = calMonth.getMonth(); // 0-based
 
-  // 價格月曆
-  const C = data.calendar, byDay = Object.fromEntries(C.map(c => [c.d, c]));
-  const prices = C.map(c => c.price).filter(v => v != null).sort((a, b) => a - b);
-  const low = prices[0], cut = prices[Math.max(0, Math.floor(prices.length * 0.2) - 1)];
-  const months = [...new Set(C.map(c => c.d.slice(0, 7)))];
-  $('cal').innerHTML = months.map(ym => {
-    const [y, m] = ym.split('-').map(Number);
-    let h = `<div class="cal-m"><h4>${y}年${m}月</h4><div class="cal-g">` + [...WD].map(w => `<div class="cal-wd">${w}</div>`).join('');
-    const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
-    for (let i = 0; i < first; i++) h += '<div></div>';
-    const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
-    for (let d = 1; d <= dim; d++) {
-      const v = `${ym}-${String(d).padStart(2, '0')}`, c = byDay[v];
-      if (c && c.price != null) {
-        const cls = c.price === low ? 'best' : c.price <= cut ? 'low' : '';
-        h += `<a class="cal-d has ${cls}" href="${esc(c.url)}" target="_blank" rel="noopener" title="${esc(c.d1label)}～${esc(c.d2label)} ${esc(c.airline)} ${fmt(c.price)}">${d}<small>${Number(c.price).toLocaleString('en-US')}</small></a>`;
+  // 依日期分組:當天筆數、當天總損益(跟卡片顯示邏輯一致)
+  const dayMap = new Map(); // key: 'YYYY-MM-DD' -> { count, total }
+  acc.trades.forEach(t=>{
+    const d = parsePlatformDate(t.platformTime);
+    if(!d) return;
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const entry = dayMap.get(key) || { count:0, total:0 };
+    entry.count += 1;
+    entry.total += totalPnlOf(t);
+    dayMap.set(key, entry);
+  });
+
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = firstDay.getDay(); // 0=週日
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const monthLabel = year + '年' + (month+1) + '月';
+
+  // 本月總損益
+  let monthTotal = 0;
+  dayMap.forEach((info, key) => {
+    if(key.startsWith(year+'-'+String(month+1).padStart(2,'0'))) monthTotal += info.total;
+  });
+
+  const weekdayNames = ['週日','週一','週二','週三','週四','週五','週六'];
+  let cellsHtml = '';
+  for(let i=0;i<startWeekday;i++){
+    cellsHtml += '<div class="cal-cell cal-cell-empty"></div>';
+  }
+  for(let day=1; day<=daysInMonth; day++){
+    const key = year+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    const info = dayMap.get(key);
+    let bg = '#fcfcfb', color = '#0b0b0b', border = '#e1e0d9';
+    let bodyHtml = '';
+    if(info){
+      if(info.total > 0){ bg = '#e6f4ea'; color = '#0a7a2e'; border = '#bfe3c9'; }
+      else if(info.total < 0){ bg = '#fbe4e2'; color = '#a02c22'; border = '#f0c9c8'; }
+      bodyHtml = '<div style="font-size:10px;margin-top:3px;">'+info.count+' 筆</div>'
+        + '<div style="font-size:11px;font-weight:700;white-space:nowrap;">'+fmtMoney(info.total)+'</div>';
+    }
+    const isInRange = selectedDateStart && selectedDateEnd && key >= selectedDateStart && key <= selectedDateEnd;
+    const ring = isInRange ? 'box-shadow:0 0 0 2px #0b0b0b inset;' : '';
+    cellsHtml += '<div class="cal-cell" data-date="'+key+'" style="background:'+bg+';color:'+color+';border-color:'+border+';cursor:pointer;'+ring+'">'
+      + '<div style="font-size:11px;color:#898781;">'+day+'</div>' + bodyHtml
+      + '</div>';
+  }
+
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <button id="calPrevBtn" style="padding:6px 10px;">‹</button>
+      <div style="font-size:14px;font-weight:600;">${monthLabel}</div>
+      <button id="calNextBtn" style="padding:6px 10px;">›</button>
+    </div>
+    <div style="text-align:center;font-size:12px;color:#52514e;margin-bottom:10px;white-space:nowrap;">本月損益 ${fmtMoney(monthTotal)}</div>
+    <div class="cal-grid cal-grid-header">
+      ${weekdayNames.map(w=>'<div class="cal-weekday">'+w+'</div>').join('')}
+    </div>
+    <div id="calGridBody" class="cal-grid">${cellsHtml}</div>
+  `;
+
+  document.getElementById('calPrevBtn').onclick = () => { calMonth = new Date(year, month-1, 1); renderCalendar(acc); };
+  document.getElementById('calNextBtn').onclick = () => { calMonth = new Date(year, month+1, 1); renderCalendar(acc); };
+  wrap.querySelectorAll('.cal-cell[data-date]').forEach(cell=>{
+    cell.onclick = () => {
+      const d = cell.dataset.date;
+      const alreadyExactDay = selectedDateStart === d && selectedDateEnd === d;
+      if(alreadyExactDay){
+        selectedDateStart = null; selectedDateEnd = null;
       } else {
-        h += `<div class="cal-d ${c ? '' : 'off'}">${d}<small>${c ? '—' : ''}</small></div>`;
+        selectedDateStart = d; selectedDateEnd = d;
+      }
+      render();
+    };
+  });
+  // 註:只用左右箭頭按鈕切換月份,月曆格子本身不做滑動切換,避免點選格子時誤觸換月
+}
+
+let chart = null;
+
+function buildEquitySeries(acc){
+  const sorted = acc.trades.map(t => ({ ...t, _d: parsePlatformDate(t.platformTime) })).filter(t => t._d).sort((a,b)=> a._d - b._d);
+  if(sorted.length===0){
+    return { labels:['起始'], data:[acc.initialCapital], granularity:'day' };
+  }
+  const first = sorted[0]._d;
+  const last = sorted[sorted.length-1]._d;
+  const spanDays = (last - first) / 86400000;
+  let granularity = 'day';
+  if(spanDays > 730) granularity = 'year';
+  else if(spanDays > 60) granularity = 'month';
+  function bucketKey(d){
+    if(granularity==='year') return String(d.getFullYear());
+    if(granularity==='month') return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  let running = acc.initialCapital;
+  const buckets = new Map();
+  sorted.forEach(t=>{
+    running += totalPnlOf(t);
+    buckets.set(bucketKey(t._d), Math.round(running*100)/100);
+  });
+  const labels = ['起始', ...buckets.keys()];
+  const data = [acc.initialCapital, ...buckets.values()];
+  return { labels, data, granularity };
+}
+
+function renderPairOptions(query){
+  const box = document.getElementById('pairOptions');
+  const q = (query||'').trim().toUpperCase();
+  const matches = q ? pairList.filter(p=>p.startsWith(q)) : pairList;
+  box.innerHTML = '';
+  matches.forEach(p=>{
+    const item = document.createElement('div');
+    item.className = 'pair-item';
+    item.textContent = p;
+    item.onclick = () => { selectedPair = p; document.getElementById('tPairInput').value = p; box.classList.remove('show'); };
+    box.appendChild(item);
+  });
+  if(q && !pairList.includes(q)){
+    const addItem = document.createElement('div');
+    addItem.className = 'pair-item';
+    addItem.style.color = '#185fa5';
+    addItem.textContent = '+ 新增 "'+q+'"';
+    addItem.onclick = () => { if(!pairList.includes(q)) pairList.push(q); selectedPair = q; document.getElementById('tPairInput').value = q; box.classList.remove('show'); };
+    box.appendChild(addItem);
+  }
+  if(matches.length>0 || q) box.classList.add('show'); else box.classList.remove('show');
+}
+
+function renderDraftImages(){
+  const wrap = document.getElementById('imgPreviewWrap');
+  wrap.innerHTML = '';
+  draftImages.forEach((item, i)=>{
+    const src = item.previewUrl || item.url;
+    const box = document.createElement('div');
+    box.style.cssText = 'position:relative;width:60px;height:60px;';
+    box.innerHTML = '<img src="'+src+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #e1e0d9;" />'
+      + '<button data-i="'+i+'" class="rmImg" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;padding:0;border-radius:50%;background:#fff;border:1px solid #c3c2b7;font-size:10px;line-height:1;">×</button>';
+    wrap.appendChild(box);
+  });
+  wrap.querySelectorAll('.rmImg').forEach(btn=>{
+    btn.onclick = async () => {
+      const i = Number(btn.dataset.i);
+      const item = draftImages[i];
+      draftImages.splice(i,1);
+      renderDraftImages();
+      if(item && item.url){
+        await deleteImagesFromStorage([item.url]);
+      }
+    };
+  });
+}
+
+async function compressImage(file){
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxDim = 1600;
+    let width = bitmap.width, height = bitmap.height;
+    if(width > maxDim || height > maxDim){
+      const scale = Math.min(maxDim / width, maxDim / height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.75));
+    if(!blob) return file;
+    const baseName = (file.name ? file.name.replace(/\.[^.]+$/, '') : 'image');
+    return new File([blob], baseName + '.jpg', { type: 'image/jpeg' });
+  } catch(e){
+    console.error('圖片壓縮失敗,改用原圖上傳:', e);
+    return file;
+  }
+}
+
+async function addDraftFile(file){
+  const compressed = await compressImage(file);
+  const previewUrl = URL.createObjectURL(compressed);
+  draftImages.push({ file: compressed, previewUrl });
+  renderDraftImages();
+}
+
+function updateWarning(){
+  const dir = document.getElementById('tDir').value;
+  const entry = document.getElementById('tEntry').value;
+  const exit = document.getElementById('tExit').value;
+  const pnl = Number(document.getElementById('tPnl').value)||0;
+  const sf = Number(document.getElementById('tStorage').value)||0;
+  const net = pnl - sf;
+  const msg = checkLogicWarning(dir, entry, exit, net);
+  const box = document.getElementById('logicWarning');
+  if(msg){ box.classList.add('show'); box.querySelector('span').textContent = msg; }
+  else box.classList.remove('show');
+  updateTotalPreview();
+  updateRiskArea();
+}
+
+function updateTotalPreview(){
+  const pnl = Number(document.getElementById('tPnl').value)||0;
+  const sf = document.getElementById('tStorage').value;
+  const preview = document.getElementById('totalPreview');
+  if(sf === ''){ preview.textContent = ''; return; }
+  const total = pnl + Number(sf);
+  preview.textContent = '損益(含庫存費)= ' + fmtMoney(total);
+}
+
+function updateRiskArea(){
+  const acc = accounts.find(a=>a.id===activeId);
+  if(!acc) return;
+  const pnl = Number(document.getElementById('tPnl').value)||0;
+  const sf = Number(document.getElementById('tStorage').value)||0;
+  const net = pnl - sf;
+  const timeVal = document.getElementById('tTime').value;
+  const autoWrap = document.getElementById('riskAuto');
+  const manualWrap = document.getElementById('riskManual');
+  if(net < 0){
+    const before = balanceBeforeTrade(acc, editingTradeId, timeVal);
+    const riskPct = before > 0 ? (Math.abs(net) / before) * 100 : 0;
+    autoWrap.style.display = 'block';
+    manualWrap.style.display = 'none';
+    autoWrap.querySelector('span').textContent = '風控 ' + riskPct.toFixed(2) + '%(純交易損益虧損 ' + fmtMoney(Math.abs(net)) + ' ÷ 下單前資金 ' + fmtMoney(before) + ',已扣除庫存費)';
+    document.getElementById('tRiskManual').dataset.autoValue = riskPct.toFixed(2);
+  } else {
+    autoWrap.style.display = 'none';
+    manualWrap.style.display = 'block';
+  }
+}
+
+function openTradeForm(trade){
+  editingTradeId = trade ? trade.id : null;
+  document.getElementById('tradeFormTitle').textContent = trade ? '編輯交易' : '新增交易';
+  selectedPair = trade ? trade.pair : '';
+  document.getElementById('tPairInput').value = selectedPair;
+  document.getElementById('pairOptions').classList.remove('show');
+  document.getElementById('tDir').value = trade ? trade.direction : 'sell';
+  document.getElementById('tEntry').value = trade ? trade.entry : '';
+  document.getElementById('tExit').value = trade ? trade.exit : '';
+  document.getElementById('tLots').value = trade ? trade.lots : '';
+  document.getElementById('tPnl').value = trade ? trade.pnl : '';
+  document.getElementById('tStorage').value = trade && trade.storageFee !== undefined && trade.storageFee !== null ? trade.storageFee : '';
+  document.getElementById('tOpenTime').value = trade && trade.openTime ? trade.openTime : '';
+  document.getElementById('tTime').value = trade ? trade.platformTime : nowPlatformStr();
+  document.getElementById('tNote').value = trade && trade.note ? trade.note : '';
+  document.getElementById('tRiskManual').value = trade && trade.riskPercent !== undefined && trade.riskPercent !== null ? trade.riskPercent : '';
+  draftImages = trade && trade.images ? trade.images.map(url => ({ url })) : [];
+  renderDraftImages();
+  document.getElementById('logicWarning').classList.remove('show');
+  updateTotalPreview();
+  updateRiskArea();
+  document.getElementById('batchForm').style.display = 'none';
+  document.getElementById('tradeForm').style.display = 'block';
+  document.getElementById('tradeForm').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function openBatchForm(){
+  document.getElementById('tradeForm').style.display = 'none';
+  document.getElementById('batchText').value = '';
+  parsedBatch = [];
+  renderBatchPreview();
+  document.getElementById('batchForm').style.display = 'block';
+  document.getElementById('batchForm').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderBatchPreview(){
+  const wrap = document.getElementById('batchPreview');
+  if(parsedBatch.length === 0){
+    wrap.innerHTML = '<div style="font-size:12px;color:#898781;padding:8px 0;">還沒有辨識出資料,請確認貼上的格式。</div>';
+    return;
+  }
+  let html = '<div style="font-size:11px;color:#898781;margin-bottom:8px;">辨識出 '+parsedBatch.length+' 筆,取消勾選可排除不要匯入的項目</div>';
+  parsedBatch.forEach((r, idx)=>{
+    html += '<div class="batch-row">'
+      + '<div style="flex:1;">'
+      + '<div style="font-weight:700;font-size:15px;">'+r.pair+' <span style="color:'+(r.direction==='buy'?'#008300':'#e34948')+';">'+r.direction+' '+r.lots+'</span></div>'
+      + '<div style="color:#52514e;margin-top:2px;">'+r.entry+' → '+r.exit+'</div>'
+      + '<div style="color:#52514e;margin-top:2px;">損益 '+(r.pnl||'—')+'</div>'
+      + '<div style="color:#898781;font-size:12px;margin-top:2px;">'+(r.openTime ? ('開倉 '+r.openTime+' · ') : '')+'平倉 '+(r.platformTime||'無時間')+'</div>'
+      + '</div>'
+      + '<input type="checkbox" data-idx="'+idx+'" class="batchChk" '+(r.include?'checked':'')+' />'
+      + '</div>';
+  });
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('.batchChk').forEach(chk=>{
+    chk.onchange = () => { parsedBatch[Number(chk.dataset.idx)].include = chk.checked; };
+  });
+}
+
+// ====== 圖片放大瀏覽 ======
+let lbGallery = [];
+let lbIndex = 0;
+let lbZoomMode = false;
+function openLightbox(images, startIdx){
+  lbGallery = images; lbIndex = startIdx;
+  lbZoomMode = false;
+  renderLightbox();
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function renderLightbox(){
+  document.getElementById('lightboxImg').src = lbGallery[lbIndex];
+  document.getElementById('lbCounter').textContent = (lbIndex+1)+' / '+lbGallery.length;
+  updateLbControlsVisibility();
+}
+function updateLbControlsVisibility(){
+  const multi = lbGallery.length > 1;
+  const showControls = !lbZoomMode;
+  document.getElementById('lbPrev').style.display = (multi && showControls) ? 'flex' : 'none';
+  document.getElementById('lbNext').style.display = (multi && showControls) ? 'flex' : 'none';
+  document.getElementById('lbCounter').style.display = showControls ? 'block' : 'none';
+  document.getElementById('lbClose').style.display = showControls ? 'flex' : 'none';
+}
+function lbShowPrev(){ lbIndex = (lbIndex - 1 + lbGallery.length) % lbGallery.length; renderLightbox(); }
+function lbShowNext(){ lbIndex = (lbIndex + 1) % lbGallery.length; renderLightbox(); }
+document.getElementById('lbClose').onclick = () => { document.getElementById('lightbox').style.display = 'none'; };
+document.getElementById('lbPrev').onclick = (e) => { e.stopPropagation(); lbShowPrev(); };
+document.getElementById('lbNext').onclick = (e) => { e.stopPropagation(); lbShowNext(); };
+document.getElementById('lightboxImg').onclick = (e) => {
+  e.stopPropagation();
+  lbZoomMode = !lbZoomMode;
+  updateLbControlsVisibility();
+};
+document.getElementById('lightbox').onclick = (e) => { if(e.target.id === 'lightbox') document.getElementById('lightbox').style.display = 'none'; };
+document.addEventListener('keydown', (e) => {
+  if(document.getElementById('lightbox').style.display !== 'flex') return;
+  if(e.key === 'ArrowLeft') lbShowPrev();
+  if(e.key === 'ArrowRight') lbShowNext();
+  if(e.key === 'Escape') document.getElementById('lightbox').style.display = 'none';
+});
+// 註:手機版不用滑動切換,避免放大縮小照片時誤觸換張,只用左右箭頭按鈕切換
+
+// ====== 主畫面渲染 ======
+function render(){
+  const acc = accounts.find(a=>a.id===activeId);
+  document.getElementById('accName').textContent = acc ? acc.name : '交易日記';
+  document.getElementById('editAccBtn').style.display = acc ? 'inline-block' : 'none';
+  const area = document.getElementById('mainArea');
+  if(!acc){
+    area.innerHTML = '<div class="empty-state"><p style="font-size:14px;color:#52514e;margin:0;">還沒有任何帳戶,請先按上方「+ 新增帳戶」建立一個。</p></div>';
+    return;
+  }
+  const totalPnl = acc.trades.reduce((s,t)=>s+totalPnlOf(t),0);
+  const balance = acc.initialCapital + totalPnl;
+  const { labels, data, granularity } = buildEquitySeries(acc);
+  const granLabel = granularity==='year' ? '年' : granularity==='month' ? '月' : '日';
+  const returnRate = acc.initialCapital > 0 ? (totalPnl / acc.initialCapital * 100) : null;
+
+  area.innerHTML = `
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">起始資金</div><div class="metric-value">${fmtMoney(acc.initialCapital)}</div></div>
+      <div class="metric"><div class="metric-label">目前餘額</div><div class="metric-value">${fmtMoney(balance)}</div></div>
+      <div class="metric"><div class="metric-label">累積損益(含庫存費)</div><div class="metric-value" style="color:${totalPnl>=0?'#008300':'#e34948'};">${fmtMoney(totalPnl)}</div></div>
+    </div>
+    <div class="metric" style="margin-bottom:1.25rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="metric-label" style="margin-bottom:0;">報酬率(損益 ÷ 起始資金)</div>
+        <div style="font-size:18px;font-weight:600;white-space:nowrap;color:${returnRate===null?'#898781':(returnRate>=0?'#008300':'#e34948')};">${returnRate===null ? '—' : (returnRate>=0?'+':'')+returnRate.toFixed(2)+'%'}</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:8px;">
+      <div style="display:flex;background:#efeee9;border-radius:8px;padding:2px;">
+        <button id="viewChartBtn" style="border:none;padding:5px 10px;font-size:12px;border-radius:6px;"></button>
+        <button id="viewCalBtn" style="border:none;padding:5px 10px;font-size:12px;border-radius:6px;"></button>
+        <button id="viewPieBtn" style="border:none;padding:5px 10px;font-size:12px;border-radius:6px;"></button>
+      </div>
+    </div>
+    <div id="chartView">
+      <div style="font-size:11px;color:#898781;margin-bottom:6px;">目前圖表刻度:${granLabel}(依資料時間跨度自動調整,資料筆數 ${acc.trades.length})</div>
+      <div style="position:relative;height:220px;margin-bottom:1.5rem;"><canvas id="eqChart"></canvas></div>
+    </div>
+    <div id="calendarView" style="display:none;margin-bottom:1.5rem;"></div>
+    <div id="pieView" style="display:none;margin-bottom:1.5rem;">
+      <div style="font-size:11px;color:#898781;margin-bottom:8px;">點圓餅圖下方圖例裡的某個商品,可以篩選出下方交易紀錄只顯示那個商品(可與日期篩選同時使用)</div>
+      <div style="position:relative;height:280px;"><canvas id="pieChart"></canvas></div>
+    </div>
+
+    ${(selectedDateStart || pieFilterPair) ? `
+    <div style="background:#f0efe9;border-radius:8px;padding:8px 12px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          ${selectedDateStart ? `
+          <input id="filterDateStart" type="date" value="${selectedDateStart}" style="width:auto;padding:4px 6px;font-size:12px;" />
+          <span style="font-size:12px;color:#898781;">至</span>
+          <input id="filterDateEnd" type="date" value="${selectedDateEnd}" style="width:auto;padding:4px 6px;font-size:12px;" />
+          ` : ''}
+          ${pieFilterPair ? `<span style="font-size:12px;color:#52514e;background:#fff;border:1px solid #e1e0d9;border-radius:6px;padding:3px 8px;">${pieFilterPair}</span>` : ''}
+        </div>
+        <button id="clearDateFilterBtn" style="padding:3px 10px;font-size:12px;">清除篩選</button>
+      </div>
+    </div>` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <h2>交易紀錄</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="batchBtn">貼上批次辨識</button>
+        <button id="newTradeBtn" class="btn-primary">+ 新增交易</button>
+      </div>
+    </div>
+
+    <div id="batchForm" class="card" style="display:none; margin-bottom:1.25rem;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#52514e;">貼上交易歷史文字,自動辨識多筆</div>
+      <div style="font-size:11px;color:#898781;margin-bottom:8px;">支援兩種常見排列方式,一次貼多筆也可以</div>
+      <textarea id="batchText" rows="6" placeholder="貼上交易歷史文字..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;margin-bottom:12px;">
+        <button id="parseBatchBtn">辨識</button>
+      </div>
+      <div id="batchPreview" style="max-height:260px;overflow-y:auto;background:#f7f6f2;border-radius:8px;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+        <button id="cancelBatch">取消</button>
+        <button id="confirmBatch" class="btn-primary">全部加入</button>
+      </div>
+    </div>
+
+    <div id="tradeForm" class="card" style="display:none; margin-bottom:1.25rem;">
+      <div id="tradeFormTitle" style="font-size:13px;font-weight:600;margin-bottom:10px;color:#52514e;">新增交易</div>
+      <div id="logicWarning" class="warning-box"><span style="font-size:12px;color:#854f0b;line-height:1.5;"></span></div>
+      <div class="form-grid">
+        <div style="position:relative;">
+          <label class="label">貨幣對(輸入開頭字母篩選)</label>
+          <input id="tPairInput" placeholder="例如輸入 X 找 XAUUSD" autocomplete="off" />
+          <div id="pairOptions" class="pair-options"></div>
+        </div>
+        <div><label class="label">方向</label><select id="tDir"><option value="sell">sell</option><option value="buy">buy</option></select></div>
+        <div><label class="label">進場價</label><input id="tEntry" type="number" step="any" /></div>
+        <div><label class="label">出場價</label><input id="tExit" type="number" step="any" /></div>
+        <div><label class="label">手數</label><input id="tLots" type="number" step="any" /></div>
+        <div><label class="label">損益</label><input id="tPnl" type="number" step="any" /></div>
+        <div><label class="label">庫存費(可留空,不影響風控計算)</label><input id="tStorage" type="number" step="any" placeholder="例如 -1.98" /></div>
+        <div style="display:flex;align-items:flex-end;"><span id="totalPreview" style="font-size:12px;color:#52514e;"></span></div>
+        <div class="full">
+          <div id="riskAuto" class="risk-auto"><span></span></div>
+          <div id="riskManual" style="display:none;">
+            <label class="label">風控%(獲利單,請手動輸入你當初設定的風控比例)</label>
+            <input id="tRiskManual" type="number" step="any" placeholder="例如 2" />
+          </div>
+        </div>
+        <div class="full"><label class="label">開倉時間(格式 2026.08.11 17:22:19,可留空)</label><input id="tOpenTime" placeholder="2026.08.11 17:22:19" /></div>
+        <div class="full"><label class="label">平倉時間(格式 2026.08.11 17:22:19,預設現在)</label><input id="tTime" placeholder="2026.08.11 17:22:19" /></div>
+        <div class="full">
+          <label class="label">日記(心得、想法、檢討...等,可留空)</label>
+          <textarea id="tNote" rows="4" placeholder="寫下這筆交易的想法..."></textarea>
+        </div>
+        <div class="full">
+          <label class="label">截圖(可多張)</label>
+          <input id="tImages" type="file" accept="image/*" multiple />
+          <div id="pasteZone" tabindex="0" style="margin-top:8px; border:1.5px dashed #c3c2b7; border-radius:8px; padding:14px; text-align:center; font-size:12px; color:#898781; cursor:text; background:#fafaf8;">
+            點這裡,複製圖片後按 Ctrl+V(或右鍵貼上)就可以直接貼入
+          </div>
+          <div id="imgPreviewWrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="cancelTrade">取消</button>
+        <button id="saveTrade" class="btn-primary">儲存</button>
+      </div>
+    </div>
+    <div id="tradeList"></div>
+  `;
+
+  const ctx = document.getElementById('eqChart');
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{ data, borderColor:'#2a78d6', backgroundColor:'rgba(42,120,214,0.1)', borderWidth:2, pointRadius:3, pointHitRadius:20, fill:true, tension:0.15 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false, axis:'x' },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          mode:'index', intersect:false,
+          backgroundColor:'#fff', titleColor:'#0b0b0b', bodyColor:'#0b0b0b',
+          borderColor:'#e1e0d9', borderWidth:1, padding:10,
+          titleFont:{ size:12, weight:'600' }, bodyFont:{ size:13 },
+          callbacks:{ label: (context) => fmtMoney(context.parsed.y) }
+        }
+      },
+      scales:{ x:{ ticks:{font:{size:10}, autoSkip:true, maxRotation:0} }, y:{ ticks:{font:{size:10}} } }
+    }
+  });
+
+  const viewChartBtn = document.getElementById('viewChartBtn');
+  const viewCalBtn = document.getElementById('viewCalBtn');
+  const viewPieBtn = document.getElementById('viewPieBtn');
+  viewChartBtn.textContent = '曲線';
+  viewCalBtn.textContent = '月曆';
+  viewPieBtn.textContent = '商品';
+  function applyView(){
+    document.getElementById('chartView').style.display = activeView==='chart' ? 'block' : 'none';
+    document.getElementById('calendarView').style.display = activeView==='calendar' ? 'block' : 'none';
+    document.getElementById('pieView').style.display = activeView==='pie' ? 'block' : 'none';
+    [[viewChartBtn,'chart'],[viewCalBtn,'calendar'],[viewPieBtn,'pie']].forEach(([btn,key])=>{
+      btn.style.background = activeView===key ? '#fff' : 'transparent';
+      btn.style.fontWeight = activeView===key ? '600' : '400';
+    });
+    if(activeView==='calendar') renderCalendar(acc);
+    if(activeView==='pie') renderPieChart(acc);
+  }
+  viewChartBtn.onclick = () => { activeView='chart'; applyView(); };
+  viewCalBtn.onclick = () => { activeView='calendar'; applyView(); };
+  viewPieBtn.onclick = () => { activeView='pie'; applyView(); };
+  applyView();
+
+  const filterDateStartInput = document.getElementById('filterDateStart');
+  const filterDateEndInput = document.getElementById('filterDateEnd');
+  if(filterDateStartInput){
+    filterDateStartInput.onchange = () => {
+      selectedDateStart = filterDateStartInput.value || null;
+      if(selectedDateStart && selectedDateEnd && selectedDateStart > selectedDateEnd) selectedDateEnd = selectedDateStart;
+      render();
+    };
+  }
+  if(filterDateEndInput){
+    filterDateEndInput.onchange = () => {
+      selectedDateEnd = filterDateEndInput.value || null;
+      if(selectedDateStart && selectedDateEnd && selectedDateEnd < selectedDateStart) selectedDateStart = selectedDateEnd;
+      render();
+    };
+  }
+
+  document.getElementById('newTradeBtn').onclick = () => { openTradeForm(null); };
+  document.getElementById('cancelTrade').onclick = () => { document.getElementById('tradeForm').style.display='none'; editingTradeId=null; };
+  document.getElementById('batchBtn').onclick = () => { openBatchForm(); };
+  document.getElementById('cancelBatch').onclick = () => { document.getElementById('batchForm').style.display='none'; };
+  document.getElementById('parseBatchBtn').onclick = () => {
+    parsedBatch = parseBatchText(document.getElementById('batchText').value);
+    renderBatchPreview();
+  };
+  document.getElementById('confirmBatch').onclick = async () => {
+    const toAdd = parsedBatch.filter(r=>r.include);
+    if(toAdd.length===0){ document.getElementById('batchForm').style.display = 'none'; return; }
+    const btn = document.getElementById('confirmBatch');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>匯入中';
+    const inserted = await insertTradesBatchRemote(acc.id, toAdd);
+    inserted.forEach(t=>{
+      acc.trades.unshift({
+        id: t.id, pair: t.pair, direction: t.direction, entry: t.entry, exit: t.exit,
+        lots: t.lots, pnl: t.pnl, storageFee: t.storage_fee, riskPercent: t.risk_percent,
+        openTime: t.open_time, platformTime: t.platform_time, note: t.note, images: t.images || []
+      });
+      if(t.pair && !pairList.includes(t.pair)) pairList.push(t.pair);
+    });
+    btn.disabled = false; btn.textContent = '全部加入';
+    document.getElementById('batchForm').style.display = 'none';
+    render();
+  };
+
+  const pairInput = document.getElementById('tPairInput');
+  pairInput.oninput = (e) => { selectedPair = e.target.value.toUpperCase(); renderPairOptions(e.target.value); };
+  pairInput.onfocus = (e) => { renderPairOptions(e.target.value); };
+  document.addEventListener('click', (e)=>{
+    if(!pairInput.contains(e.target) && !document.getElementById('pairOptions').contains(e.target)){
+      document.getElementById('pairOptions').classList.remove('show');
+    }
+    const accMenu = document.getElementById('accMenu');
+    if(accMenu && !accMenu.contains(e.target) && e.target.id !== 'menuBtn'){
+      accMenu.classList.remove('show');
+    }
+  });
+
+  ['tDir','tEntry','tExit','tPnl','tTime'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', updateWarning);
+    document.getElementById(id).addEventListener('change', updateWarning);
+  });
+  document.getElementById('tStorage').addEventListener('input', () => { updateTotalPreview(); updateRiskArea(); });
+
+  document.getElementById('tImages').onchange = (e) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(f => addDraftFile(f));
+    e.target.value = '';
+  };
+  function handlePasteEvent(e){
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    let found = false;
+    for(const item of items){
+      if(item.type && item.type.startsWith('image/')){
+        found = true;
+        const file = item.getAsFile();
+        addDraftFile(file);
       }
     }
-    return h + '</div></div>';
-  }).join('');
-  $('results').hidden = false;
-  $('results').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
-}
-
-function render(data, file){
-  $('scanBox').hidden = true; $('grid').parentElement.hidden = false; document.querySelector('.legend').hidden = false;
-  const A = data.airlines;
-  if (!A.length) { showErr('沒有找到航班。可以試試放寬轉機條件、出發時段，或確認機場代碼。'); return; }
-
-  // 最便宜的一筆
-  let best = null;
-  data.pairs.forEach(p => A.forEach(a => { const x = p.airlines[a]; if (x && x.best != null && (!best || x.best < best.price)) best = {price:x.best, a, label:p.label}; }));
-  // 只有沒價格航班的航空公司，最低價那格也標示「未提供」
-  $('cheap').innerHTML = best ? `最便宜：${esc(best.label.replace(/\n/g,''))}　${esc(best.a)}　<b>${fmt(best.price)}</b>` : '';
-  if (file) { $('dl').href = excelUrl(file); $('dl').hidden = false; } else $('dl').hidden = true;
-
-  let h = '<thead><tr><th rowspan="2" class="date">日期</th>';
-  A.forEach(a => h += `<th colspan="5" class="al g">${esc(a)}</th>`);
-  h += '</tr><tr>';
-  A.forEach(() => h += '<th class="g">去程</th><th>來回價</th><th>回程</th><th>來回價</th><th>最低</th>');
-  h += '</tr></thead><tbody>';
-  data.pairs.forEach(p => {
-    const n = Math.max(1, ...A.map(a => { const x = p.airlines[a]; return x ? Math.max(x.outs.length, x.rets.length) : 0; }));
-    const bests = A.map(a => p.airlines[a] && p.airlines[a].best).filter(v => v != null);
-    const minAll = bests.length ? Math.min(...bests) : null;
-    for (let i = 0; i < n; i++) {
-      h += `<tr class="${i === 0 ? 'first' : ''}">`;
-      if (i === 0) h += `<td rowspan="${n}" class="date"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.label)}</a></td>`;
-      A.forEach(a => {
-        const x = p.airlines[a] || {outs:[], rets:[], reliable:true, best:null};
-        const o = x.outs[i], r = x.rets[i];
-        const po = x.outs.filter(v => v.price != null).map(v => v.price), pr = x.rets.filter(v => v.price != null).map(v => v.price);
-        const mo = po.length ? Math.min(...po) : null;
-        const mr = pr.length ? Math.min(...pr) : null;
-        h += `<td class="g">${o ? (o.star ? '★ ' : '') + esc(o.text) : ''}</td>`;
-        h += `<td class="p ${o && o.price != null && o.price === mo ? 'lo' : ''}">${o ? (o.price == null ? '<a class="np" href="' + esc(p.url) + '" target="_blank" rel="noopener" title="Google 清單上沒有價格，點這裡到 Google Flights 看">未提供</a>' : fmt(o.price)) : ''}</td>`;
-        h += `<td>${r ? esc(r.text) : ''}</td>`;
-        h += `<td class="p ${r && r.price === mr ? 'lo' : ''} ${x.reliable ? '' : 'oneway'}" ${!x.reliable && i === 0 ? 'title="Google 這次只給了單程價，請點日期確認"' : ''}>${r ? fmt(r.price) : ''}</td>`;
-        if (i === 0) h += `<td rowspan="${n}" class="best ${x.best != null && x.best === minAll ? 'top' : ''}">${x.best != null ? fmt(x.best) : (x.outs.length ? '<span class="hint">未提供</span>' : '')}</td>`;
-      });
-      h += '</tr>';
-    }
-  });
-  $('grid').innerHTML = h + '</tbody>';
-
-  const combos = data.pairs.flatMap(p => p.combos.map(c => ({...c, label: p.label.replace(/\n/g,'')})));
-  const showCombos = $('full').checked && combos.length;
-  $('comboBox').hidden = !showCombos;
-  if (showCombos) {
-    combos.sort((a, b) => a.price - b.price);
-    const low = combos[0].price;
-    $('combo').innerHTML = '<thead><tr><th>日期</th><th>航空公司</th><th>去程</th><th>回程</th><th>來回價</th></tr></thead><tbody>' +
-      combos.map(c => `<tr><td>${esc(c.label)}</td><td>${esc(c.airline)}</td><td>${esc(c.out)}</td><td>${esc(c.ret)}</td>` +
-        `<td class="p ${c.price === low ? 'top' : ''} ${c.ok ? '' : 'oneway'}">${fmt(c.price)}</td></tr>`).join('') + '</tbody>';
+    if(found) e.preventDefault();
   }
-  $('results').hidden = false;
-  $('results').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
-}
-</script>
-<script>
-// ════════ 手機版：改成透過 GitHub 執行查詢 ════════
-const GH = {
-  owner: localStorage.getItem('gh_owner') || (location.hostname.endsWith('github.io') ? location.hostname.split('.')[0] : ''),
-  repo: localStorage.getItem('gh_repo') || (location.hostname.endsWith('github.io') ? location.pathname.split('/')[1] : ''),
-  token: localStorage.getItem('gh_token') || '',
-};
-let currentRun = null, currentReq = null, runStart = 0, estimateMin = 3, pollTimer = null;
-const LEAVE_TIP = '⚠️ 請先不要關掉頁面，查完要選航空公司，選好才會傳結果到 Telegram。\n（不小心關掉也沒關係，查完 Telegram 會通知你回來選。）';
+  const pasteZone = document.getElementById('pasteZone');
+  pasteZone.addEventListener('paste', handlePasteEvent);
+  pasteZone.addEventListener('click', () => pasteZone.focus());
 
-async function gh(path, opts = {}){
-  const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}${path}`, {
-    ...opts, cache: 'no-store',
-    headers: {'Accept': 'application/vnd.github+json', 'Authorization': `Bearer ${GH.token}`,
-              'X-GitHub-Api-Version': '2022-11-28', ...(opts.body ? {'Content-Type': 'application/json'} : {})},
-  });
-  if (r.status === 401) throw new Error('通行碼（token）不對或過期了，請按右上角 ⚙️ 重新設定。');
-  if (r.status === 404 && opts.allow404) return r;  // 檔案還不存在（例如第一次加追蹤），是正常的
-  if (r.status === 403 || r.status === 404) throw new Error('通行碼的權限不夠，或專案名稱不對，請按右上角 ⚙️ 檢查。');
-  return r;
-}
-function excelUrl(f){ return `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/main/docs/results/${f}?t=${Date.now()}`; }
+  document.getElementById('saveTrade').onclick = async () => {
+    let pairVal = document.getElementById('tPairInput').value.trim().toUpperCase();
+    if(pairVal && !pairList.includes(pairVal)) pairList.push(pairVal);
+    const pnl = Number(document.getElementById('tPnl').value)||0;
+    const sf = Number(document.getElementById('tStorage').value)||0;
+    const net = pnl - sf;
+    let riskPercent;
+    if(net < 0){ riskPercent = document.getElementById('tRiskManual').dataset.autoValue || ''; }
+    else { riskPercent = document.getElementById('tRiskManual').value; }
 
-// ── 設定（通行碼）──
-function openSettings(){
-  $('st-owner').value = GH.owner; $('st-repo').value = GH.repo; $('st-token').value = GH.token;
-  $('st').hidden = false; document.body.style.overflow = 'hidden';
-}
-$('st-save').onclick = () => {
-  GH.owner = $('st-owner').value.trim(); GH.repo = $('st-repo').value.trim(); GH.token = $('st-token').value.trim();
-  try { localStorage.setItem('gh_owner', GH.owner); localStorage.setItem('gh_repo', GH.repo); localStorage.setItem('gh_token', GH.token); } catch {}
-  $('st').hidden = true; document.body.style.overflow = '';
-  checkSetup();
-};
-$('st-cancel').onclick = () => { $('st').hidden = true; document.body.style.overflow = ''; };
-$('gear').onclick = openSettings;
-function checkSetup(){ $('setupHint').hidden = !!(GH.token && GH.owner && GH.repo); }
-checkSetup();
+    const btn = document.getElementById('saveTrade');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>儲存中';
 
-// ── 送出查詢 ──
-async function startSearch(body){
-  if (!GH.token) { openSettings(); return showErr('第一次使用要先設定 GitHub 通行碼（右上角 ⚙️）。'); }
-  notesShown = false; $('npb').hidden = true; $('err').hidden = true; $('note').hidden = true;
-  $('results').hidden = true; $('alf').hidden = true; lastAsk = null; chosen = null; lastResult = null;
-  currentReq = Date.now().toString(36);
-  body.reqId = currentReq;
-  body.originLabel = $('origin').value; body.destLabel = $('dest').value;
-  const n = pairCount();
-  estimateMin = body.mode === 'scan' ? Math.max(2, Math.round((n * 6 + 60) / 60) + 1) : Math.max(2, Math.round(n * 0.5 + 1.5));
-  try {
-    const r = await gh('/actions/workflows/search.yml/dispatches', {method: 'POST',
-      body: JSON.stringify({ref: 'main', inputs: {params: JSON.stringify(body)}})});
-    if (r.status !== 204) { const j = await r.json().catch(() => ({})); throw new Error(j.message || `GitHub 回應 ${r.status}`); }
-  } catch (e) { return showErr('無法開始查詢：' + e.message); }
-  runStart = Date.now(); currentRun = null;
-  $('goBtn').disabled = true; $('goBtn').textContent = '查詢中…'; $('progress').hidden = false;
-  $('stopBtn').hidden = false; $('stopBtn').disabled = false; $('stopBtn').textContent = '■ 停止';
-  $('log').textContent = '已送出，等 GitHub 開始執行…\n' + LEAVE_TIP;
-  $('barFill').style.width = '3%';
-  clearTimeout(pollTimer); pollTimer = setTimeout(pollRun, 4000);
-}
+    // 上傳新圖片,保留已存在的網址
+    const existingUrls = draftImages.filter(d=>d.url).map(d=>d.url);
+    const newFiles = draftImages.filter(d=>d.file).map(d=>d.file);
+    const uploadedUrls = newFiles.length ? await uploadImages(newFiles) : [];
+    const allImages = [...existingUrls, ...uploadedUrls];
 
-async function pollRun(){
-  try {
-    if (!currentRun) {
-      const r = await gh('/actions/workflows/search.yml/runs?event=workflow_dispatch&per_page=5');
-      const j = await r.json();
-      currentRun = (j.workflow_runs || []).find(x => new Date(x.created_at).getTime() >= runStart - 60000) || null;
+    const draft = {
+      pair: pairVal, direction: document.getElementById('tDir').value,
+      entry: document.getElementById('tEntry').value, exit: document.getElementById('tExit').value,
+      lots: document.getElementById('tLots').value, pnl: document.getElementById('tPnl').value,
+      storageFee: document.getElementById('tStorage').value, riskPercent: riskPercent,
+      openTime: document.getElementById('tOpenTime').value,
+      platformTime: document.getElementById('tTime').value,
+      note: document.getElementById('tNote').value,
+      images: allImages,
+    };
+    const saved = await saveTradeRemote(acc.id, draft, editingTradeId);
+    btn.disabled = false; btn.textContent = '儲存';
+    if(!saved) return;
+
+    const normalized = {
+      id: saved.id, pair: saved.pair, direction: saved.direction, entry: saved.entry, exit: saved.exit,
+      lots: saved.lots, pnl: saved.pnl, storageFee: saved.storage_fee, riskPercent: saved.risk_percent,
+      openTime: saved.open_time, platformTime: saved.platform_time, note: saved.note, images: saved.images || []
+    };
+    if(editingTradeId){
+      const idx = acc.trades.findIndex(t=>t.id===editingTradeId);
+      if(idx>-1) acc.trades[idx] = normalized;
     } else {
-      currentRun = await (await gh(`/actions/runs/${currentRun.id}`)).json();
+      acc.trades.unshift(normalized);
     }
-  } catch (e) { $('log').textContent = '暫時連不到 GitHub，稍後自動再試…'; pollTimer = setTimeout(pollRun, 6000); return; }
-  const mins = (Date.now() - runStart) / 60000;
-  $('barFill').style.width = Math.min(95, mins / estimateMin * 100) + '%';
-  if (!currentRun || currentRun.status !== 'completed') {
-    const st = !currentRun ? '等 GitHub 開始…' : currentRun.status === 'queued' ? '排隊中…' : '查詢中…';
-    $('log').textContent = `${st}已經過 ${Math.floor(mins)} 分 ${Math.round((mins % 1) * 60)} 秒，預估約 ${estimateMin} 分鐘。\n` + LEAVE_TIP;
-    pollTimer = setTimeout(pollRun, 5000); return;
-  }
-  done(); $('barFill').style.width = '100%';
-  if (currentRun.conclusion === 'cancelled') { $('note').textContent = '已停止，可以修改條件後重新搜尋。'; $('note').hidden = false; return; }
-  if (currentRun.conclusion !== 'success') return showErr('GitHub 執行失敗，請到 GitHub 的 Actions 看錯誤訊息：' + currentRun.html_url);
-  loadResults(currentReq, 0);
-}
-
-async function loadResults(req, tries){
-  let R;
-  try {
-    const r = await gh('/contents/docs/results/latest.json?ref=main');
-    const j = await r.json();
-    R = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(j.content.replace(/\n/g, '')), c => c.charCodeAt(0))));
-  } catch (e) { return showErr('讀不到查詢結果：' + e.message); }
-  if (req && R.reqId !== req) {
-    if (tries < 5) return setTimeout(() => loadResults(req, tries + 1), 3000);
-    return showErr('找不到這次的查詢結果，可能被下一次查詢蓋掉了。');
-  }
-  $('log').textContent = `查詢時間：${R.created}`;
-  if (R.error) return showErr('查詢失敗：' + R.error);
-  showResults(R);
-}
-
-function showResults(R){
-  lastResult = R; lastFile = R.file;
-  lastAsk = {kind: R.kind, airlines: R.summary || []};
-  chosen = (R.summary || []).map(a => a.name);
-  const go = () => {
-    if (lastAsk.airlines.length > 1) askAirlines(); else applyChoice(chosen);
+    document.getElementById('tradeForm').style.display='none';
+    editingTradeId = null;
+    render();
   };
-  if (R.failNote) { $('err').textContent = '⚠️ ' + R.failNote + '。可以過一陣子再查一次。'; $('err').hidden = false; }
-  if (R.notes && R.notes.length && !notesShown) { notesShown = true; showNoPrice(R.notes, go); } else { showBanner(R.notes); go(); }
-}
 
-function buildScan(R, pick){
-  const k = new Set(pick);
-  const E = R.entries.filter(e => k.has(e.airline)).sort((a, b) => a.price - b.price);
-  const top = E.slice(0, 10).map(e => ({...e, retOk: true}));
-  const best = {};
-  E.forEach(e => { if (!best[e.d1]) best[e.d1] = e; });
-  const calendar = R.dayList.map(d => ({...d, price: best[d.d] ? best[d.d].price : null, airline: best[d.d] ? best[d.d].airline : ''}));
-  return {kind: 'scan', days: R.days, top, calendar};
-}
-function applyChoice(pick){
-  chosen = pick; showChips(lastAsk.airlines.length);
-  if (lastResult.kind === 'scan') renderScan(buildScan(lastResult, pick), lastFile);
-  else render(filterNormal(lastResult.data, pick), lastFile);
-  showBanner(lastResult.notes);
-}
-function askAirlines(){
-  const A = lastAsk.airlines, sel = new Set(chosen || A.map(a => a.name));
-  $('al-hint').textContent = lastResult && lastResult.sentAirlines
-    ? `共找到 ${A.length} 家航空公司。改選後按「確定」，會把更新的結果再傳到 Telegram。`
-    : `共找到 ${A.length} 家航空公司。勾選要比較的，按「確定」後才會把結果和 Excel 傳到 Telegram。`;
-  $('al-list').innerHTML = A.map(a => `<label><input type="checkbox" value="${esc(a.name)}" ${sel.has(a.name) ? 'checked' : ''}>` +
-    `<span class="n">${esc(a.name)}</span><span class="pr">${a.price != null ? '最低 ' + fmt(a.price) : '<span class="hint">價格未提供</span>'}</span><span class="c">${a.count} ${lastAsk.kind === 'scan' ? '天' : '組'}有班機</span></label>`).join('');
-  alCount();
-  $('al').hidden = false; document.body.style.overflow = 'hidden'; $('al-go').focus();
-}
-$('al-go').onclick = () => {
-  const pick = alPicked(); if (!pick.length) return;
-  closeAl(); applyChoice(pick);
-  const sent = lastResult.sentAirlines;
-  const same = sent && pick.length === sent.length && pick.every(a => sent.includes(a));
-  if (!same) resendTelegram(pick);
-};
-async function resendTelegram(pick){
-  if (!GH.token || !lastResult || !lastResult.reqId) return;
-  const box = $('note');
-  try {
-    const r = await gh('/actions/workflows/search.yml/dispatches', {method: 'POST',
-      body: JSON.stringify({ref: 'main', inputs: {params: JSON.stringify({action: 'resend', reqId: lastResult.reqId, airlines: pick})}})});
-    if (r.status !== 204) throw new Error(`GitHub 回應 ${r.status}`);
-    lastResult.sentAirlines = pick;
-    box.textContent = `📤 已經把結果（${pick.length} 家航空）送去 Telegram，大約 30 秒～1 分鐘後會收到，Excel 也會一起傳。\n✅ 現在可以關掉頁面了。之後想改選，再回來按「更改航空公司」就好。`;
-  } catch (e) {
-    box.textContent = '傳到 Telegram 失敗：' + e.message;
-  }
-  box.hidden = false;
-}
+  const clearFilterBtn = document.getElementById('clearDateFilterBtn');
+  if(clearFilterBtn){ clearFilterBtn.onclick = () => { selectedDateStart = null; selectedDateEnd = null; pieFilterPair = null; render(); }; }
 
-$('stopBtn').onclick = async () => {
-  $('stopBtn').disabled = true; $('stopBtn').textContent = '停止中…';
-  try { if (currentRun) await gh(`/actions/runs/${currentRun.id}/cancel`, {method: 'POST'}); } catch {}
-};
-
-// 打開頁面時，如果網址有 #results 就顯示最近一次的結果（從 Telegram 點進來）
-if (location.hash === '#results' && GH.token) loadResults(null, 0);
-$('lastBtn').onclick = () => { if (!GH.token) return openSettings(); $('err').hidden = true; loadResults(null, 0); };
-</script>
-
-<script>
-// ════════ 降價追蹤（手機版）════════
-const COMMON_AIRLINES = ['台灣虎航','長榮航空','中華航空','星宇航空','國泰航空','香港航空','香港快運航空','樂桃航空','捷星日本航空','酷航',
-  '亞洲航空','越捷航空','真航空','釜山航空','濟州航空','易斯達航空','德威航空','大韓航空','韓亞航空','日本航空','全日空',
-  '泰國獅子航空','宿霧太平洋航空','華信航空','立榮航空','菲律賓航空','越南航空','新加坡航空','泰國國際航空'];
-const b64enc = s => { const b = new TextEncoder().encode(s); let t = ''; b.forEach(c => t += String.fromCharCode(c)); return btoa(t); };
-const b64dec = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, '')), c => c.charCodeAt(0)));
-async function getFile(path){
-  const r = await gh(`/contents/${encodeURIComponent(path)}?ref=main`, {allow404: true});
-  if (r.status === 404) return {data: null, sha: null};
-  const j = await r.json();
-  return {data: JSON.parse(b64dec(j.content)), sha: j.sha};
-}
-async function putFile(path, data, sha, message){
-  const body = {message, content: b64enc(JSON.stringify(data, null, 1)), branch: 'main'};
-  if (sha) body.sha = sha;
-  const r = await gh(`/contents/${encodeURIComponent(path)}`, {method: 'PUT', body: JSON.stringify(body)});
-  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.message || `GitHub 回應 ${r.status}`); }
-}
-async function updateTracks(fn, message){
-  for (let i = 0; i < 2; i++) {
-    const {data, sha} = await getFile('tracks.json');
-    const list = fn(data || []);
-    try { await putFile('tracks.json', list, sha, message); return list; }
-    catch (e) { if (i) throw e; }  // 剛好有人同時改，重讀一次再試
-  }
-}
-
-// ── 分頁切換 ──
-function setMain(m){
-  document.body.classList.toggle('trackmode', m === 'track');
-  $('mt-search').setAttribute('aria-pressed', m === 'search'); $('mt-track').setAttribute('aria-pressed', m === 'track');
-  $('trackOpts').hidden = m !== 'track'; $('trackList').hidden = m !== 'track';
-  if (m === 'track') { fillAirlineChips(); loadTracks(); }
-}
-$('mt-search').onclick = () => setMain('search');
-$('mt-track').onclick = () => setMain('track');
-
-function fillAirlineChips(){
-  const box = $('tAirlines'); const had = new Set([...box.querySelectorAll('input:checked')].map(i => i.value));
-  const extra = (lastResult && lastResult.summary || []).map(a => a.name);
-  const names = [...new Set([...extra, ...COMMON_AIRLINES])];
-  box.innerHTML = names.map(n => `<label class="chip"><input type="checkbox" value="${esc(n)}" ${had.has(n) ? 'checked' : ''}>${esc(n)}</label>`).join('');
-}
-$('tMode').onchange = () => {
-  $('tTargetBox').hidden = $('tMode').value !== 'below';
-  $('tAmountBox').hidden = $('tMode').value !== 'dropBy';
-};
-
-function trackDatesDesc(t){
-  if (t.kind === 'scan') {
-    const s = t.scan;
-    const ym = v => `${v.slice(0, 4)}年${Number(v.slice(5, 7))}月`;
-    const rng = s.startDate ? `${shortDate(s.startDate)}～${shortDate(s.endDate)}` : (s.startMonth === s.endMonth ? ym(s.startMonth) : `${ym(s.startMonth)}～${ym(s.endMonth)}`);
-    return `${rng}，每天出發、玩 ${s.days} 天`;
-  }
-  return t.pairs.length === 1 ? `${shortDate(t.pairs[0][0])}～${shortDate(t.pairs[0][1])}` : `${t.pairs.length} 組日期（${shortDate(t.pairs[0][0])} 起）`;
-}
-function notifyDesc(n){
-  return n.mode === 'below' ? `低於 ${fmt(n.target)} 時通知` : n.mode === 'dropBy' ? `降價超過 ${fmt(n.amount)} 時通知`
-       : n.mode === 'any' ? '漲跌都通知' : '有降價就通知';
-}
-
-// ── 加入追蹤 ──
-$('addTrack').onclick = async () => {
-  if (!GH.token) { openSettings(); return showErr('要先設定 GitHub 通行碼（右上角 ⚙️）。'); }
-  $('err').hidden = true;
-  const origin = apOrigin.get(), dest = apDest.get();
-  if (!origin) { $('origin').focus(); return showErr('請先選擇出發地。'); }
-  if (!dest) { $('dest').focus(); return showErr('請先選擇目的地。'); }
-  if (origin === dest) return showErr('出發地和目的地不能一樣。');
-  const t = {id: Date.now().toString(36), created: new Date().toISOString().slice(0, 16).replace('T', ' '),
-    origin, dest, originLabel: $('origin').value, destLabel: $('dest').value,
-    stops: $('stops').value, adults: Number($('adults').value),
-    outFrom: hour('outFrom'), outTo: hour('outTo'), retFrom: hour('retFrom'), retTo: hour('retTo'),
-    airlines: [...document.querySelectorAll('#tAirlines input:checked')].map(i => i.value), active: true};
-  if (mode === 'scan') {
-    const n = scanPairs().length;
-    if (!n) return showErr('這個區間放不下這麼多天的行程，請調整。');
-    if (n > 45) return showErr(`區間追蹤最多 45 個出發日，目前有 ${n} 個。請縮短區間（太多會很慢，也容易被 Google 擋）。`);
-    t.kind = 'scan';
-    t.scan = scanBy === 'date' ? {startDate: sRange.a, endDate: sRange.b, days: Number($('sDays').value)}
-                               : {startMonth: $('sStart').value, endMonth: $('sEnd').value, days: Number($('sDays').value)};
+  const list = document.getElementById('tradeList');
+  const dateFiltered = acc.trades.filter(t=>{
+    if(selectedDateStart || selectedDateEnd){
+      const d = parsePlatformDate(t.platformTime);
+      if(!d) return false;
+      const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(selectedDateStart && key < selectedDateStart) return false;
+      if(selectedDateEnd && key > selectedDateEnd) return false;
+    }
+    if(pieFilterPair && t.pair !== pieFilterPair) return false;
+    return true;
+  });
+  const sortedDesc = [...dateFiltered].sort((a,b)=>(b.platformTime||'').localeCompare(a.platformTime||''));
+  if(sortedDesc.length===0){
+    list.innerHTML = '<div class="empty-state" style="color:#898781;font-size:13px;">'+((selectedDateStart||pieFilterPair) ? '符合篩選條件的交易紀錄是空的' : '還沒有交易紀錄')+'</div>';
   } else {
-    const ps = mode === 'pairs' ? pairs.map(p => [p.a, p.b]) : weeklyPairs();
-    if (!ps.length) return showErr('沒有任何日期。');
-    if (ps.length > 12) return showErr(`一條追蹤最多 12 組日期，目前有 ${ps.length} 組，請減少，或改用「月份區間」。`);
-    t.kind = 'pairs'; t.pairs = ps;
+    let html = '';
+    sortedDesc.forEach(t=>{
+      const net = netTradingPnl(t);
+      const warn = checkLogicWarning(t.direction, t.entry, t.exit, net);
+      const hasFee = t.storageFee !== undefined && t.storageFee !== null && t.storageFee !== '';
+      const total = totalPnlOf(t);
+      const imgsHtml = (t.images && t.images.length) ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">'+t.images.map((src,ii)=>'<img src="'+src+'" class="thumb tradeImg" data-tid="'+t.id+'" data-idx="'+ii+'" />').join('')+'</div>' : '';
+      const warnHtml = warn ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#faeeda;border-radius:6px;padding:6px 8px;margin-top:8px;"><span style="font-size:11px;color:#854f0b;line-height:1.5;">⚠ '+warn+'</span></div>' : '';
+
+      // 風控:即時運算,不用點編輯、不用按鈕。沒填庫存費先當 0 算;
+      // 之後你哪天補上庫存費並儲存,這裡會自動用新的庫存費重新算出正確數字。
+      let riskHtml = '';
+      if(net < 0){
+        const before = balanceBeforeTrade(acc, t.id, t.platformTime);
+        const riskPct = before > 0 ? (Math.abs(net) / before) * 100 : 0;
+        riskHtml = '<div style="font-size:11px;color:#52514e;margin-top:4px;">風控 '+riskPct.toFixed(2)+'%(自動計算'+(hasFee ? '' : ',尚未填庫存費,暫以 0 計算')+')</div>';
+      } else if(t.riskPercent !== undefined && t.riskPercent !== null && t.riskPercent !== ''){
+        riskHtml = '<div style="font-size:11px;color:#52514e;margin-top:4px;">風控 '+Number(t.riskPercent).toFixed(2)+'%(手動輸入)</div>';
+      }
+
+      const holding = formatHoldingDuration(t.openTime, t.platformTime);
+      const openTw = t.openTime ? taiwanTime(t.openTime) : '';
+      html += '<div class="trade-card">'
+        + (openTw ? '<div style="font-size:11px;color:#898781;margin-bottom:4px;">開倉 '+openTw+'</div>' : '')
+        + '<div style="display:flex;justify-content:space-between;align-items:baseline;">'
+        + '<div style="font-size:14px;font-weight:600;">'+(t.pair||'—')+' <span style="color:'+(t.direction==='buy'?'#008300':'#e34948')+';font-size:12px;">'+t.direction+' '+t.lots+'</span></div>'
+        + '<div style="font-size:14px;font-weight:600;white-space:nowrap;color:'+(total>=0?'#008300':'#e34948')+';">'+fmtMoney(total)+'</div>'
+        + '</div>'
+        + '<div style="font-size:12px;color:#52514e;margin-top:4px;">'+t.entry+' → '+t.exit+'</div>'
+        + (hasFee ? '<div style="font-size:11px;color:#898781;margin-top:4px;">損益已含庫存費 '+fmtMoney(t.storageFee)+'(純交易損益 '+fmtMoney(net)+')</div>' : '')
+        + riskHtml
+        + '<div style="font-size:11px;color:#898781;margin-top:4px;">平倉 '+(taiwanTime(t.platformTime)||'—')+(holding ? ' · 持倉 '+holding : '')+'</div>'
+        + warnHtml + imgsHtml
+        + '<div style="margin-top:8px;display:flex;gap:8px;"><button class="editBtn" data-id="'+t.id+'" style="padding:4px 10px;font-size:12px;">編輯</button><button class="diaryBtn" data-id="'+t.id+'" style="padding:4px 10px;font-size:12px;">日記</button><button class="deleteTradeBtn" data-id="'+t.id+'" style="padding:4px 10px;font-size:12px;color:#e34948;border-color:#f0c9c8;">刪除</button></div>'
+        + '</div>';
+    });
+    list.innerHTML = html;
+    list.querySelectorAll('.editBtn').forEach(btn=>{
+      btn.onclick = () => { const tr = acc.trades.find(x=>x.id===btn.dataset.id); if(tr) openTradeForm(tr); };
+    });
+    list.querySelectorAll('.diaryBtn').forEach(btn=>{
+      btn.onclick = () => {
+        const tr = acc.trades.find(x=>x.id===btn.dataset.id);
+        if(!tr) return;
+        const key = dateKeyOf(tr.platformTime);
+        if(!key){ alert('這筆交易沒有有效的平倉時間,無法對應到日期。'); return; }
+        openDiaryScreen(key, tr.id);
+      };
+    });
+    list.querySelectorAll('.deleteTradeBtn').forEach(btn=>{
+      btn.onclick = async () => {
+        const tr = acc.trades.find(x=>x.id===btn.dataset.id);
+        if(!tr) return;
+        const confirmed = confirm('確定要刪除這筆「'+(tr.pair||'')+'」交易紀錄嗎?附加的截圖也會一併刪除,此動作無法復原。');
+        if(!confirmed) return;
+        btn.disabled = true;
+        const ok = await deleteTradeRemote(tr.id, tr.images);
+        if(!ok) { btn.disabled = false; return; }
+        acc.trades = acc.trades.filter(x=>x.id!==tr.id);
+        render();
+      };
+    });
+    list.querySelectorAll('.tradeImg').forEach(img=>{
+      img.onclick = () => {
+        const tr = acc.trades.find(x=>x.id===img.dataset.tid);
+        if(tr) openLightbox(tr.images, Number(img.dataset.idx));
+      };
+    });
   }
-  const m = $('tMode').value;
-  t.notify = {mode: m};
-  if (m === 'below') { t.notify.target = Number($('tTarget').value); if (!(t.notify.target > 0)) return showErr('請填目標價，例如 8000。'); }
-  if (m === 'dropBy') { t.notify.amount = Number($('tAmount').value); if (!(t.notify.amount > 0)) return showErr('請填降多少才通知，例如 300。'); }
+}
 
-  const btn = $('addTrack'); btn.disabled = true; btn.textContent = '加入中…';
-  try {
-    await updateTracks(list => [...list, t], '新增追蹤：' + t.origin + '-' + t.dest);
-    await gh('/actions/workflows/track.yml/dispatches', {method: 'POST',
-      body: JSON.stringify({ref: 'main', inputs: {track_id: t.id}})}).catch(() => {});
-    $('note').textContent = '✅ 已加入追蹤！幾分鐘內 Telegram 會收到「開始追蹤」和目前最低價，之後每天早上 8 點、晚上 8 點自動檢查。';
-    $('note').hidden = false;
-    loadTracks();
-  } catch (e) { showErr('加入失敗：' + e.message); }
-  btn.disabled = false; btn.textContent = '＋ 加入降價追蹤';
-};
+function renderPieChart(acc){
+  // 商品分布圓餅圖:反映目前的日期篩選(若有),但不受商品篩選本身影響,這樣才能點選切換
+  const pieSourceTrades = acc.trades.filter(t=>{
+    if(!selectedDateStart && !selectedDateEnd) return true;
+    const d = parsePlatformDate(t.platformTime);
+    if(!d) return false;
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(selectedDateStart && key < selectedDateStart) return false;
+    if(selectedDateEnd && key > selectedDateEnd) return false;
+    return true;
+  });
+  const pairCounts = new Map();
+  pieSourceTrades.forEach(t=>{
+    const p = t.pair || '未標示';
+    pairCounts.set(p, (pairCounts.get(p)||0) + 1);
+  });
+  const pieLabels = [...pairCounts.keys()];
+  const pieData = [...pairCounts.values()];
+  const pieColors = ['#2a78d6','#e08a3c','#5fa85f','#c8577a','#8b6bd6','#3fa9b0','#d6a72a','#9c6b4f','#6b7fd6','#b0555e'];
 
-// ── 追蹤清單 ──
-async function loadTracks(){
-  const box = $('tlist');
-  if (!GH.token) { box.innerHTML = '<p class="hint">設定通行碼後就能看到你的追蹤清單。</p>'; return; }
-  box.innerHTML = '<p class="hint">讀取中…</p>';
-  let list, state;
-  try { list = (await getFile('tracks.json')).data || []; state = (await getFile('track_state.json')).data || {}; }
-  catch (e) { box.innerHTML = `<p class="hint">讀取失敗：${esc(e.message)}</p>`; return; }
-  if (!list.length) { box.innerHTML = '<p class="hint">還沒有追蹤的航班。在上面選好條件，按「＋ 加入降價追蹤」。</p>'; return; }
-  const stopTxt = {0: '直飛', 1: '最多轉 1 次', any: '可轉機'};
-  box.innerHTML = list.slice().reverse().map(t => {
-    const s = state[t.id] || {};
-    const status = s.expired ? '<span class="tbad">⌛ 日期已過，已停止追蹤</span>'
-      : s.last != null ? `目前最低 <b>${fmt(s.last)}</b>（${esc(s.lastAirline || '')}　${esc(s.lastDates || '')}）`
-      : '<span class="hint">等待第一次檢查（幾分鐘內）</span>';
-    const low = s.min != null ? `<div class="t3">追蹤以來最低 <b>${fmt(s.min)}</b>（${esc(s.minAt || '')}）</div>` : '';
-    const when = s.lastCheck ? `<div class="t4">上次檢查：${esc(s.lastCheck)}${s.fails ? `　⚠️ 最近 ${s.fails} 次查詢失敗` : ''}${s.url ? `　<a href="${esc(s.url)}" target="_blank" rel="noopener">Google Flights</a>` : ''}</div>` : '';
-    return `<div class="tcard"><div class="t1"><b>${esc(t.originLabel || t.origin)} ⇄ ${esc(t.destLabel || t.dest)}</b>
-      <button type="button" class="tdel" data-id="${esc(t.id)}">刪除</button></div>
-      <div class="t2">${esc(trackDatesDesc(t))}　${stopTxt[t.stops] || '直飛'}</div>
-      <div class="t2">${esc(notifyDesc(t.notify || {}))}　航空：${t.airlines && t.airlines.length ? esc(t.airlines.join('、')) : '全部'}</div>
-      <div class="t3">${status}</div>${low}${when}</div>`;
-  }).join('');
-  box.querySelectorAll('.tdel').forEach(b => b.onclick = async () => {
-    if (!confirm('確定要刪除這條追蹤嗎？')) return;
-    b.disabled = true; b.textContent = '刪除中…';
-    try { await updateTracks(list => list.filter(x => x.id !== b.dataset.id), '刪除追蹤'); loadTracks(); }
-    catch (e) { showErr('刪除失敗：' + e.message); b.disabled = false; b.textContent = '刪除'; }
+  const pieCtx = document.getElementById('pieChart');
+  if(pieChart) pieChart.destroy();
+  if(pieLabels.length === 0){
+    pieCtx.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#898781;font-size:13px;">還沒有交易紀錄可以統計</div>';
+    return;
+  }
+  const pieTotal = pieData.reduce((s,n)=>s+n,0);
+  pieChart = new Chart(pieCtx, {
+    type:'pie',
+    data:{ labels: pieLabels, datasets:[{ data: pieData, backgroundColor: pieLabels.map((_,i)=>pieColors[i % pieColors.length]) }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      // 只有點下方圖例文字才會篩選,圓餅圖本身只用來看(手指點/移過去只顯示提示框百分比),
+      // 避免手機點圓餅圖時因為觸控同時觸發篩選、畫面整個重刷,看不到提示框內容。
+      plugins:{
+        legend:{
+          position:'bottom',
+          labels:{
+            font:{size:11}, boxWidth:12,
+            generateLabels:(chart)=>{
+              const defaults = Chart.overrides.pie.plugins.legend.labels.generateLabels(chart);
+              defaults.forEach((item,i)=>{
+                const pct = pieTotal>0 ? (pieData[i]/pieTotal*100).toFixed(1) : '0.0';
+                item.text = pieLabels[i] + ' ' + pct + '%';
+              });
+              return defaults;
+            }
+          },
+          onClick:(evt, legendItem)=>{
+            const idx = legendItem.index;
+            const clickedPair = pieLabels[idx];
+            pieFilterPair = (pieFilterPair === clickedPair) ? null : clickedPair;
+            render();
+          }
+        },
+        tooltip:{
+          callbacks:{
+            label:(ctx)=>{
+              const pct = pieTotal>0 ? (ctx.parsed/pieTotal*100).toFixed(1) : '0.0';
+              return ctx.label + ': ' + ctx.parsed + ' 筆 (' + pct + '%)';
+            }
+          }
+        }
+      }
+    }
   });
 }
-$('tRefresh').onclick = loadTracks;
-</script>
 
+// ====== 全螢幕日記編輯畫面 ======
+let diaryPendingUploads = 0;
+
+function openDiaryScreen(dateKey, preferredTradeId){
+  const acc = accounts.find(a=>a.id===activeId);
+  if(!acc) return;
+  diaryCurrentDate = dateKey;
+  diaryDayTrades = acc.trades.filter(t => dateKeyOf(t.platformTime) === dateKey)
+    .sort((a,b)=>(a.platformTime||'').localeCompare(b.platformTime||''));
+  if(preferredTradeId && diaryDayTrades.find(t=>t.id===preferredTradeId)){
+    diarySelectedTradeId = preferredTradeId;
+  } else {
+    diarySelectedTradeId = diaryDayTrades.length ? diaryDayTrades[0].id : null;
+  }
+  diaryDirty = false;
+  document.getElementById('diaryDateLabel').textContent = dateKey + ' 日記';
+  renderDiarySidebar();
+  renderDiaryMain();
+  document.getElementById('diaryScreen').style.display = 'block';
+  closeDiarySidebar();
+}
+
+function closeDiaryScreen(){
+  if(diaryDirty){
+    const ok = confirm('這筆日記有還沒儲存的修改,確定要離開嗎?離開就不會存檔。');
+    if(!ok) return;
+  }
+  diaryDirty = false;
+  document.getElementById('diaryScreen').style.display = 'none';
+}
+
+function switchDiaryTrade(tradeId){
+  if(diaryDirty){
+    const ok = confirm('這筆日記有還沒儲存的修改,確定要切換到別筆嗎?目前的修改不會存檔。');
+    if(!ok) return;
+  }
+  diarySelectedTradeId = tradeId;
+  renderDiarySidebar();
+  renderDiaryMain();
+  closeDiarySidebar();
+}
+
+function openDiarySidebar(){
+  document.getElementById('diarySidebar').classList.add('show');
+  document.getElementById('diarySidebarOverlay').style.display = 'block';
+}
+function closeDiarySidebar(){
+  document.getElementById('diarySidebar').classList.remove('show');
+  document.getElementById('diarySidebarOverlay').style.display = 'none';
+}
+
+function renderDiarySidebar(){
+  const wrap = document.getElementById('diarySidebar');
+  if(diaryDayTrades.length === 0){
+    wrap.innerHTML = '<div style="font-size:12px;color:#898781;">這天沒有交易紀錄</div>';
+    return;
+  }
+  wrap.innerHTML = diaryDayTrades.map(t=>{
+    const total = totalPnlOf(t);
+    const active = t.id === diarySelectedTradeId;
+    return '<div class="diary-side-item" data-id="'+t.id+'" style="padding:8px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:'+(active?'#efeee9':'transparent')+';border:1px solid '+(active?'#c3c2b7':'transparent')+';">'
+      + '<div style="font-size:12px;font-weight:600;">'+(t.pair||'—')+' <span style="color:'+(t.direction==='buy'?'#008300':'#e34948')+';font-size:11px;">'+t.direction+'</span></div>'
+      + '<div style="font-size:11px;color:'+(total>=0?'#008300':'#e34948')+';">'+fmtMoney(total)+'</div>'
+      + '</div>';
+  }).join('');
+  wrap.querySelectorAll('.diary-side-item').forEach(el=>{
+    el.onclick = () => { switchDiaryTrade(el.dataset.id); };
+  });
+}
+
+async function insertImageIntoNote(file){
+  const editable = document.getElementById('diaryNoteInput');
+  const tempUrl = URL.createObjectURL(file);
+  const img = document.createElement('img');
+  img.src = tempUrl;
+  img.style.opacity = '0.5';
+  const sel = window.getSelection();
+  if(sel && sel.rangeCount > 0 && editable.contains(sel.anchorNode)){
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(img);
+    range.setStartAfter(img);
+    range.setEndAfter(img);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } else {
+    editable.appendChild(img);
+  }
+  editable.focus();
+  diaryDirty = true;
+
+  diaryPendingUploads++;
+  try {
+    const urls = await uploadImages([file]);
+    if(urls && urls[0]){
+      img.src = urls[0];
+      img.style.opacity = '1';
+    } else {
+      img.remove();
+    }
+  } finally {
+    diaryPendingUploads--;
+    URL.revokeObjectURL(tempUrl);
+  }
+}
+
+function addDiaryDraftFile(file){
+  insertImageIntoNote(file);
+}
+
+function renderDiaryMain(){
+  const trade = diaryDayTrades.find(t=>t.id===diarySelectedTradeId);
+  const infoWrap = document.getElementById('diaryTradeInfo');
+  const noteInput = document.getElementById('diaryNoteInput');
+  if(!trade){
+    infoWrap.innerHTML = '<div style="font-size:13px;color:#898781;">這天沒有交易紀錄可以編輯</div>';
+    noteInput.innerHTML = '';
+    noteInput.setAttribute('contenteditable', 'false');
+    return;
+  }
+  noteInput.setAttribute('contenteditable', 'true');
+  infoWrap.innerHTML = `
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:#52514e;">交易資訊(可編輯)</div>
+    <div class="form-grid">
+      <div><label class="label">貨幣對</label><input id="diaryPair" value="${trade.pair||''}" /></div>
+      <div><label class="label">方向</label><select id="diaryDir"><option value="sell" ${trade.direction==='sell'?'selected':''}>sell</option><option value="buy" ${trade.direction==='buy'?'selected':''}>buy</option></select></div>
+      <div><label class="label">進場價</label><input id="diaryEntry" type="number" step="any" value="${trade.entry??''}" /></div>
+      <div><label class="label">出場價</label><input id="diaryExit" type="number" step="any" value="${trade.exit??''}" /></div>
+      <div><label class="label">手數</label><input id="diaryLots" type="number" step="any" value="${trade.lots??''}" /></div>
+      <div><label class="label">損益</label><input id="diaryPnl" type="number" step="any" value="${trade.pnl??''}" /></div>
+      <div>
+        <label class="label">開倉時間</label>
+        <input id="diaryOpenTime" value="${trade.openTime||''}" placeholder="2026.08.11 17:22:19" />
+        <div id="diaryOpenTimeTw" style="font-size:11px;color:#898781;margin-top:4px;">台灣 ${taiwanTime(trade.openTime)||'—'}</div>
+      </div>
+      <div>
+        <label class="label">平倉時間</label>
+        <input id="diaryCloseTime" value="${trade.platformTime||''}" placeholder="2026.08.11 17:22:19" />
+        <div id="diaryCloseTimeTw" style="font-size:11px;color:#898781;margin-top:4px;">台灣 ${taiwanTime(trade.platformTime)||'—'}</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('diaryOpenTime').addEventListener('input', (e)=>{
+    document.getElementById('diaryOpenTimeTw').textContent = '台灣 ' + (taiwanTime(e.target.value) || '—');
+  });
+  document.getElementById('diaryCloseTime').addEventListener('input', (e)=>{
+    document.getElementById('diaryCloseTimeTw').textContent = '台灣 ' + (taiwanTime(e.target.value) || '—');
+  });
+  if(trade.note){
+    noteInput.innerHTML = trade.note;
+  } else if(trade.images && trade.images.length){
+    noteInput.innerHTML = trade.images.map(src=>'<img src="'+src+'" />').join('');
+  } else {
+    noteInput.innerHTML = '';
+  }
+
+  noteInput.style.maxHeight = '300px';
+  noteInput.onfocus = () => { noteInput.style.maxHeight = 'none'; };
+  noteInput.onblur = () => { noteInput.style.maxHeight = '300px'; };
+
+  ['diaryPair','diaryDir','diaryEntry','diaryExit','diaryLots','diaryPnl','diaryOpenTime','diaryCloseTime'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('input', ()=>{ diaryDirty = true; });
+    el.addEventListener('change', ()=>{ diaryDirty = true; });
+  });
+  noteInput.addEventListener('input', ()=>{ diaryDirty = true; });
+  diaryDirty = false;
+}
+
+async function saveDiaryTrade(){
+  if(diaryPendingUploads > 0){
+    alert('圖片還在上傳中,請稍等一下再儲存。');
+    return;
+  }
+  const acc = accounts.find(a=>a.id===activeId);
+  if(!acc) return;
+  const trade = acc.trades.find(t=>t.id===diarySelectedTradeId);
+  if(!trade) return;
+
+  const btn = document.getElementById('diarySaveBtn');
+  const originalText = btn.textContent;
+  const originalBg = btn.style.background;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>儲存中';
+
+  let pairVal = document.getElementById('diaryPair').value.trim().toUpperCase();
+  if(pairVal && !pairList.includes(pairVal)) pairList.push(pairVal);
+
+  const noteEl = document.getElementById('diaryNoteInput');
+  const newImages = Array.from(noteEl.querySelectorAll('img')).map(img=>img.src);
+  const oldImages = trade.images || [];
+  const removedImages = oldImages.filter(u => !newImages.includes(u));
+  if(removedImages.length) await deleteImagesFromStorage(removedImages);
+
+  const draft = {
+    pair: pairVal,
+    direction: document.getElementById('diaryDir').value,
+    entry: document.getElementById('diaryEntry').value,
+    exit: document.getElementById('diaryExit').value,
+    lots: document.getElementById('diaryLots').value,
+    pnl: document.getElementById('diaryPnl').value,
+    storageFee: trade.storageFee !== undefined && trade.storageFee !== null ? trade.storageFee : '',
+    riskPercent: trade.riskPercent !== undefined && trade.riskPercent !== null ? trade.riskPercent : '',
+    openTime: document.getElementById('diaryOpenTime').value,
+    platformTime: document.getElementById('diaryCloseTime').value,
+    note: noteEl.innerHTML,
+    images: newImages,
+  };
+  const saved = await saveTradeRemote(acc.id, draft, trade.id);
+  btn.disabled = false;
+  if(!saved){
+    btn.textContent = originalText;
+    btn.style.background = originalBg;
+    return;
+  }
+
+  const normalized = {
+    id: saved.id, pair: saved.pair, direction: saved.direction, entry: saved.entry, exit: saved.exit,
+    lots: saved.lots, pnl: saved.pnl, storageFee: saved.storage_fee, riskPercent: saved.risk_percent,
+    openTime: saved.open_time, platformTime: saved.platform_time, note: saved.note, images: saved.images || []
+  };
+  const idx = acc.trades.findIndex(t=>t.id===trade.id);
+  if(idx>-1) acc.trades[idx] = normalized;
+
+  diaryDayTrades = acc.trades.filter(t => dateKeyOf(t.platformTime) === diaryCurrentDate)
+    .sort((a,b)=>(a.platformTime||'').localeCompare(b.platformTime||''));
+  if(!diaryDayTrades.find(t=>t.id===diarySelectedTradeId)){
+    diarySelectedTradeId = diaryDayTrades.length ? diaryDayTrades[0].id : null;
+  }
+  diaryDirty = false;
+  renderDiarySidebar();
+  renderDiaryMain();
+  render();
+
+  btn.textContent = '✓ 已儲存';
+  btn.style.background = '#0a7a2e';
+  btn.disabled = true;
+  setTimeout(()=>{
+    btn.textContent = originalText;
+    btn.style.background = originalBg;
+    btn.disabled = false;
+  }, 1400);
+}
+
+function tryExtractImageFromPaste(e){
+  const dt = e.clipboardData;
+  let found = false;
+  if(dt && dt.items){
+    for(const item of dt.items){
+      if(item.type && item.type.startsWith('image/')){
+        found = true;
+        const file = item.getAsFile();
+        if(file) addDiaryDraftFile(file);
+      }
+    }
+  }
+  if(!found && dt && dt.files && dt.files.length){
+    for(const file of dt.files){
+      if(file.type && file.type.startsWith('image/')){
+        found = true;
+        addDiaryDraftFile(file);
+      }
+    }
+  }
+  return found;
+}
+
+document.getElementById('diaryCloseBtn').onclick = closeDiaryScreen;
+document.getElementById('diarySaveBtn').onclick = saveDiaryTrade;
+document.getElementById('diarySidebarToggle').onclick = openDiarySidebar;
+document.getElementById('diarySidebarOverlay').onclick = closeDiarySidebar;
+document.getElementById('diaryImages').onchange = (e) => {
+  const files = Array.from(e.target.files || []);
+  files.forEach(f => addDiaryDraftFile(f));
+  e.target.value = '';
+};
+(function(){
+  const noteInput = document.getElementById('diaryNoteInput');
+  noteInput.addEventListener('paste', (e)=>{
+    const wasImage = tryExtractImageFromPaste(e);
+    if(wasImage){
+      e.preventDefault();
+      return;
+    }
+    const text = (e.clipboardData && e.clipboardData.getData('text/plain')) || '';
+    if(text){
+      e.preventDefault();
+      document.execCommand('insertText', false, text);
+    }
+  });
+  noteInput.addEventListener('click', (e)=>{
+    if(e.target.tagName === 'IMG'){
+      const imgs = Array.from(noteInput.querySelectorAll('img'));
+      const idx = imgs.indexOf(e.target);
+      openLightbox(imgs.map(img=>img.src), idx);
+    }
+  });
+})();
+</script>
 </body>
 </html>
