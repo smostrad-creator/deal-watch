@@ -57,6 +57,8 @@ body.trackmode .go,body.trackmode .checks,body.trackmode #results,body.trackmode
 .tcard .t4 a{color:var(--accent)}
 .tdel{border:1px solid var(--line);background:transparent;color:var(--danger);padding:4px 12px;font-size:13px}
 .tbad{color:var(--muted)}
+#updHint{display:block;background:#E8F1FD;color:var(--accent);font-weight:700;text-decoration:none}
+#updHint[hidden]{display:none}
 .tgbox{margin-top:18px;padding:14px 16px;border:1px solid #F5B400;background:rgba(245,180,0,.08);border-radius:12px}
 .tgbox[hidden]{display:none}
 .tgbox h3{margin:0 0 8px;font-size:16px}
@@ -278,8 +280,9 @@ summary{cursor:pointer;color:var(--accent);font-weight:700}
 </head>
 <body>
 <div class="wrap">
-  <h1 class="toprow">查機票 <small class="ver">手機版 11/6</small>
+  <h1 class="toprow">查機票 <small class="ver">手機版 11/6b</small>
     <span class="topbtns"><button type="button" class="link" id="lastBtn">最近結果</button><button type="button" class="gearbtn" id="gear" aria-label="設定">⚙️</button></span></h1>
+  <a class="note" id="updHint" hidden href="#">🔄 有新版本，點這裡更新</a>
   <div class="mtabs" role="group" aria-label="功能"><button type="button" id="mt-search" aria-pressed="true">🔍 查機票</button><button type="button" id="mt-track" aria-pressed="false">📉 降價追蹤</button></div>
   <div class="note" id="setupHint" hidden>第一次使用：請按右上角 ⚙️ 貼上 GitHub 通行碼。</div>
 
@@ -1225,6 +1228,17 @@ function render(data, file){
   $('results').hidden = false;
   $('results').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
 }
+</script>
+<script>
+// 自動檢查新版：手機常常會暫存舊頁面，打開時比對 version.json
+const PAGE_VERSION = '11/6b';
+fetch('version.json?t=' + Date.now(), {cache: 'no-store'}).then(r => r.ok ? r.json() : null).then(v => {
+  if (v && v.version && v.version !== PAGE_VERSION) {
+    const a = document.getElementById('updHint');
+    a.href = location.pathname + '?v=' + encodeURIComponent(v.version) + Date.now() + location.hash;
+    a.hidden = false;
+  }
+}).catch(() => {});
 </script>
 <script>
 // ════════ 手機版：改成透過 GitHub 執行查詢 ════════
