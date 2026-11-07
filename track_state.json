@@ -1,0 +1,32 @@
+{
+ "_serp": {
+  "month": "2026-11",
+  "used": 0
+ },
+ "mw3o9h0r": {
+  "tiger": {
+   "last": 4698,
+   "d1": "2027-02-22",
+   "d2": "2027-02-25",
+   "at": "11/07 21:12",
+   "min": 4698
+  },
+  "lastCheck": "11/07 21:12",
+  "fails": 0,
+  "last": 9290,
+  "lastAirline": "真航空",
+  "lastDates": "2/22(一)～2/25(四)",
+  "lastOut": "02:40 - 06:10",
+  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDItMjIoAGoFEgNUUEVyBRIDUFVTGhwSCjIwMjctMDItMjUoAGoFEgNQVVNyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
+  "min": 9290,
+  "minAt": "11/07 21:12",
+  "minAirline": "真航空",
+  "minDates": "2/22(一)～2/25(四)",
+  "history": [
+   [
+    "11/07 21:12",
+    9290
+   ]
+  ]
+ }
+}
