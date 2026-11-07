@@ -587,14 +587,31 @@ def check_reminders(reminders):
     return keep
 
 
+SHARE_FILE = os.path.join(HERE, "分享群組.txt")
+
+
+def share_targets():
+    """分享群組.txt 裡的聊天室 ID（一行一個，# 開頭是註解）：特價消息也會傳到這些地方"""
+    try:
+        with open(SHARE_FILE, encoding="utf-8-sig") as f:
+            return [ln.split("#")[0].strip() for ln in f if ln.split("#")[0].strip()]
+    except FileNotFoundError:
+        return []
+
+
 def send_telegram(text):
+    """特價快報的通知：傳到你的群組，也傳到「分享群組.txt」裡的每個地方"""
     token, chat = os.environ.get("TELEGRAM_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
     if not token or not chat:
         log("（沒有設定 TELEGRAM_TOKEN / TELEGRAM_CHAT_ID，只印在畫面上）\n" + text)
         return
-    body = json.dumps({"chat_id": chat, "text": text, "parse_mode": "HTML",
-                       "disable_web_page_preview": True}).encode("utf-8")
-    fetch(f"https://api.telegram.org/bot{token}/sendMessage", data=body)
+    for target in [chat] + [t for t in share_targets() if t != chat]:
+        body = json.dumps({"chat_id": target, "text": text, "parse_mode": "HTML",
+                           "disable_web_page_preview": True}).encode("utf-8")
+        try:
+            fetch(f"https://api.telegram.org/bot{token}/sendMessage", data=body)
+        except Exception as e:
+            log(f"傳到 {target} 失敗：{e}")
 
 
 def fmt(item):
