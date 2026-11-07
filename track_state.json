@@ -28,5 +28,31 @@
     9290
    ]
   ]
+ },
+ "mw6fg949": {
+  "tiger": {
+   "last": 6598,
+   "d1": "2027-02-18",
+   "d2": "2027-02-21",
+   "at": "11/07 21:16",
+   "min": 6598
+  },
+  "lastCheck": "11/07 21:16",
+  "fails": 0,
+  "last": 10440,
+  "lastAirline": "真航空",
+  "lastDates": "2/18(四)～2/21(日)",
+  "lastOut": "02:40 - 06:10",
+  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDItMTgoAGoFEgNUUEVyBRIDUFVTGhwSCjIwMjctMDItMjEoAGoFEgNQVVNyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
+  "min": 10440,
+  "minAt": "11/07 21:16",
+  "minAirline": "真航空",
+  "minDates": "2/18(四)～2/21(日)",
+  "history": [
+   [
+    "11/07 21:16",
+    10440
+   ]
+  ]
  }
 }
