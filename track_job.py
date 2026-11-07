@@ -26,6 +26,32 @@ core.print = lambda *a, **k: print(*a, flush=True)
 from search_job import send_text, fmtp  # noqa: E402  共用 Telegram 傳送
 
 
+SHARE_FILE = os.path.join(HERE, "分享群組.txt")
+
+
+def send_share(text):
+    """降價通知：傳到旅行群組，也傳到「分享群組.txt」裡的每個地方"""
+    send_text(text)
+    token, main = os.environ.get("TELEGRAM_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
+    if not token:
+        return
+    try:
+        with open(SHARE_FILE, encoding="utf-8-sig") as f:
+            targets = [ln.split("#")[0].strip() for ln in f if ln.split("#")[0].strip()]
+    except FileNotFoundError:
+        return
+    import urllib.request
+    for t in targets:
+        if t == main:
+            continue
+        body = json.dumps({"chat_id": t, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}).encode()
+        try:
+            urllib.request.urlopen(urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=body,
+                                                          headers={"Content-Type": "application/json"}), timeout=30).read()
+        except Exception as e:
+            print(f"傳到 {t} 失敗：{e}")
+
+
 def load(path, default):
     try:
         with open(path, encoding="utf-8") as f:
@@ -131,7 +157,7 @@ def check_tiger(t, s, pairs, route, notify=True):
     last = ts.get("last")
     total = tb[0]
     if notify and last is not None and total < last:
-        send_text(f"🐯 <b>虎航官網降價了！</b>\n{route}\n{fmtp(last)} → <b>{fmtp(total)}</b>（降 NT${last - total:,}，未稅來回）"
+        send_share(f"🐯 <b>虎航官網降價了！</b>\n{route}\n{fmtp(last)} → <b>{fmtp(total)}</b>（降 NT${last - total:,}，未稅來回）"
                   f"\n去 {dlabel(tb[1])} {fmtp(tb[3])}、回 {dlabel(tb[2])} {fmtp(tb[4])}"
                   + (f"\n虎航官網最低紀錄：{fmtp(min(total, ts.get('min') or total))}") +
                   "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
@@ -247,7 +273,7 @@ def tiger_sale_check(sale, tracks, state):
     lines.append("\n<i>這是虎航官網的單人未稅起價，結帳會再加稅金；要輸入優惠碼的折扣這裡看不到。</i>"
                  "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
     if mine or routes:
-        send_text("\n".join(lines))
+        send_share("\n".join(lines))
 
 
 def sale_check(sale, tracks, state):
@@ -315,11 +341,52 @@ def sale_check(sale, tracks, state):
                      "便宜的座位很少，想搶的話直接到航空公司官網。</i>")
     if not mine and not routes:
         return
-    send_text("\n".join(lines))
+    send_share("\n".join(lines))
+
+
+def test_run(tracks, state):
+    """測試模式：真的去查目前價格，假裝上次貴 500 元，傳一次降價通知看看長怎樣；不改任何記錄"""
+    n = 0
+    for t in tracks:
+        if not t.get("active", True) or (state.get(t["id"]) or {}).get("expired"):
+            continue
+        pairs = pairs_of(t)
+        if not pairs:
+            continue
+        n += 1
+        route = html.escape(route_of(t))
+        setup_core(t)
+        head = "🧪 <b>測試通知</b>（假裝上次貴 NT$500，這不是真的降價）\n\n"
+        if tiger_ok_for(t):
+            tb = tiger.round_trip(t["origin"], t["dest"], pairs)
+            if tb:
+                total = tb[0]
+                send_text(head + f"🐯 <b>虎航官網降價了！</b>\n{route}\n{fmtp(total + 500)} → <b>{fmtp(total)}</b>（降 NT$500，未稅來回）"
+                          f"\n去 {dlabel(tb[1])} {fmtp(tb[3])}、回 {dlabel(tb[2])} {fmtp(tb[4])}"
+                          "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
+            else:
+                send_text(head + f"🐯 {route}：" + ("虎航官網這次沒抓到資料" if not tiger.ok(t["origin"], t["dest"]) else "這些日期虎航官網沒有票價"))
+        best = cheapest(t, pairs)
+        if best is None:
+            send_text(head + f"⚠️ {route}：Google Flights 這次查詢失敗（可能被擋）")
+            continue
+        p = best["price"]
+        link = f"\n🔗 <a href=\"{html.escape(best['url'])}\">在 Google Flights 查看</a>"
+        line = f"{html.escape(best['airline'])}　{best['dates']}　去程 {html.escape(best['out'])}"
+        send_text(head + f"📉 <b>降價了！</b>\n{route}\n{fmtp(p + 500)} → <b>{fmtp(p)}</b>（降 NT$500）"
+                  f"\n{html.escape(dates_desc(t))}\n{line}\n追蹤以來最低：{fmtp(p)}" + link)
+    if not n:
+        send_text("🧪 測試：目前沒有進行中的追蹤，先到查詢頁「📉 降價追蹤」加一條。")
 
 
 def main():
     only = os.environ.get("TRACK_ID") or ""
+    if only.strip().lower() == "test":
+        tracks = load(TRACKS, [])
+        state = load(STATE, {})
+        serp_budget(state)
+        test_run(tracks, state)
+        return  # 測試不存任何記錄
     tracks = load(TRACKS, [])
     state = load(STATE, {})
     now = datetime.now(TW)
@@ -372,7 +439,7 @@ def main():
         new_min = s.get("min") is None or price < s["min"]
 
         if last is None:
-            send_text(f"👀 <b>開始追蹤</b>：{route}\n{html.escape(dates_desc(t))}\n\n目前最低：<b>{fmtp(price)}</b>（Google Flights 含稅）\n{line}\n"
+            send_share(f"👀 <b>開始追蹤</b>：{route}\n{html.escape(dates_desc(t))}\n\n目前最低：<b>{fmtp(price)}</b>（Google Flights 含稅）\n{line}\n"
                       + (f"\n{tline}\n" if tline else "") +
                       f"\n通知方式：{html.escape(notify_desc(n))}" + link)
         else:
@@ -398,7 +465,7 @@ def main():
                     msg = f"📉 <b>降價了！</b>\n{route}\n{fmtp(last)} → <b>{fmtp(price)}</b>（降 NT${-diff:,}）"
             if msg:
                 low = min(price, s.get("min") or price)
-                send_text(msg + f"\n{html.escape(dates_desc(t))}\n{line}\n追蹤以來最低：{fmtp(low)}"
+                send_share(msg + f"\n{html.escape(dates_desc(t))}\n{line}\n追蹤以來最低：{fmtp(low)}"
                           + ("　🆕 新低！" if new_min and s.get("min") is not None else "") + link)
 
         s.update(last=price, lastAirline=best["airline"], lastDates=best["dates"], lastOut=best["out"], url=best["url"])
