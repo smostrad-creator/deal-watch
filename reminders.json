@@ -1250,27 +1250,6 @@ null
 },
 {
 "kind": "sale",
-"start": "2026-11-07T06:14:23.974461+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"routes": [
-{
-"from": "TPE",
-"to": "KMQ",
-"fromName": "台北",
-"toName": "小松",
-"price": 1899
-}
-],
-"travel": [
-null,
-null
-],
-"done": []
-},
-{
-"kind": "sale",
 "start": "2026-11-07T08:07:54.492784+08:00",
 "title": "虎航官網偵測到特價",
 "airline": "台灣虎航",
