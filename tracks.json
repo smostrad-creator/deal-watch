@@ -23,5 +23,31 @@
   "notify": {
    "mode": "drop"
   }
+ },
+ {
+  "id": "mw6fg949",
+  "created": "2026-11-07 13:16",
+  "origin": "TPE",
+  "dest": "PUS",
+  "originLabel": "台北 TPE",
+  "destLabel": "釜山 PUS",
+  "stops": "0",
+  "adults": 1,
+  "outFrom": null,
+  "outTo": null,
+  "retFrom": null,
+  "retTo": null,
+  "airlines": [],
+  "active": true,
+  "kind": "pairs",
+  "pairs": [
+   [
+    "2027-02-18",
+    "2027-02-21"
+   ]
+  ],
+  "notify": {
+   "mode": "drop"
+  }
  }
 ]
