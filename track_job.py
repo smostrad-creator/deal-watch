@@ -6,6 +6,7 @@
 """
 import html
 import json
+import re
 import os
 import sys
 import traceback
@@ -27,6 +28,58 @@ from search_job import send_text, fmtp  # noqa: E402  共用 Telegram 傳送
 
 
 SHARE_FILE = os.path.join(HERE, "分享群組.txt")
+
+
+def main_chat():
+    return os.environ.get("TELEGRAM_CHAT_ID")
+
+
+def target_of(t):
+    """這條追蹤的通知傳給誰：誰加的就傳給誰；舊的追蹤傳到旅行群組"""
+    return str(t.get("to") or main_chat() or "")
+
+
+def uid_of(target):
+    import hashlib
+    return hashlib.sha256(str(target).encode()).hexdigest()[:12]
+
+
+def send_to(chat, text):
+    token = os.environ.get("TELEGRAM_TOKEN")
+    if not token or not chat:
+        print("（沒有 Telegram 設定）", text[:80])
+        return
+    import urllib.request
+    body = json.dumps({"chat_id": chat, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}).encode()
+    try:
+        urllib.request.urlopen(urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=body,
+                                                      headers={"Content-Type": "application/json"}), timeout=30).read()
+    except Exception as e:
+        print(f"傳到 {chat} 失敗：{e}")
+
+
+def tsend(t, text, share=False):
+    """傳這條追蹤的通知：你的追蹤傳旅行群組（並照分享群組.txt 分享）；朋友的追蹤只私訊給他"""
+    chat = target_of(t)
+    if chat == str(main_chat()):
+        (send_share if share else send_text)(text)
+    else:
+        send_to(chat, text)
+
+
+def send_sale(head, buckets, route_part, track_title):
+    """特價加查：每個人只收到自己的追蹤；旅行群組另外收到新聞航線，並分享出去"""
+    main = str(main_chat())
+    chats = set(buckets) | ({main} if route_part else set())
+    for chat in chats:
+        part = buckets.get(chat) or []
+        if not part and chat != main:
+            continue
+        msg = "\n".join(head + ([track_title] + part if part else []) + (route_part if (chat == main or part) else []))
+        if chat == main:
+            send_share(msg)
+        else:
+            send_to(chat, msg)
 
 
 def send_share(text):
@@ -157,7 +210,7 @@ def check_tiger(t, s, pairs, route, notify=True):
     last = ts.get("last")
     total = tb[0]
     if notify and last is not None and total < last:
-        send_share(f"🐯 <b>虎航官網降價了！</b>\n{route}\n{fmtp(last)} → <b>{fmtp(total)}</b>（降 NT${last - total:,}，未稅來回）"
+        tsend(t, share=True, text=f"🐯 <b>虎航官網降價了！</b>\n{route}\n{fmtp(last)} → <b>{fmtp(total)}</b>（降 NT${last - total:,}，未稅來回）"
                   f"\n去 {dlabel(tb[1])} {fmtp(tb[3])}、回 {dlabel(tb[2])} {fmtp(tb[4])}"
                   + (f"\n虎航官網最低紀錄：{fmtp(min(total, ts.get('min') or total))}") +
                   "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
@@ -235,26 +288,27 @@ def tiger_sale_check(sale, tracks, state):
     a, b = sale.get("travel") or [None, None]
     a = max(date.fromisoformat(a), tomorrow) if a else tomorrow
     b = date.fromisoformat(b) if b else a + timedelta(days=180)
+    buckets = {}
+    tl = lambda t: buckets.setdefault(target_of(t), [])
     # A. 你的追蹤
     mine = [t for t in tracks if t.get("active", True) and not state.get(t["id"], {}).get("expired") and tiger_ok_for(t)]
-    if mine:
-        lines.append("\n<b>你的追蹤</b>（未稅來回起價）")
     for t in mine[:8]:
         s = state.setdefault(t["id"], {})
         before = (s.get("tiger") or {}).get("last")
         tb = tiger.round_trip(t["origin"], t["dest"], pairs_of(t))
         name = html.escape(route_of(t))
         if tb is None:
-            lines.append(f"・{name}：" + ("虎航官網暫時抓不到資料" if not tiger.ok(t["origin"], t["dest"]) else "這些日期虎航沒有票價"))
+            tl(t).append(f"・{name}：" + ("虎航官網暫時抓不到資料" if not tiger.ok(t["origin"], t["dest"]) else "這些日期虎航沒有票價"))
             continue
         total = tb[0]
         diff = "" if before is None else (f"　📉 降 NT${before - total:,}" if total < before else "　沒有變便宜" if total == before else f"　漲 NT${total - before:,}")
-        lines.append(f"・{name}：<b>{fmtp(total)}</b>（去 {dlabel(tb[1])} {fmtp(tb[3])}、回 {dlabel(tb[2])} {fmtp(tb[4])}）{diff}")
+        tl(t).append(f"・{name}：<b>{fmtp(total)}</b>（去 {dlabel(tb[1])} {fmtp(tb[3])}、回 {dlabel(tb[2])} {fmtp(tb[4])}）{diff}")
         ts = s.setdefault("tiger", {})
         ts.update(last=total, d1=tb[1].isoformat(), d2=tb[2].isoformat(), at=datetime.now(TW).strftime("%m/%d %H:%M"))
         if ts.get("min") is None or total < ts["min"]:
             ts["min"] = total
     # B. 新聞裡的特價航線
+    n0 = len(lines)
     routes = sale.get("routes") or []
     if routes:
         lines.append(f"\n<b>新聞裡的特價航線</b>（單程未稅起價，出發 {dlabel(a)}～{dlabel(b)}）")
@@ -272,8 +326,7 @@ def tiger_sale_check(sale, tracks, state):
         lines.append(f"・{label}：最低 <b>{fmtp(low)}</b>　{show}{news}{hit}")
     lines.append("\n<i>這是虎航官網的單人未稅起價，結帳會再加稅金；要輸入優惠碼的折扣這裡看不到。</i>"
                  "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
-    if mine or routes:
-        send_share("\n".join(lines))
+    send_sale(lines[:n0], buckets, lines[n0:] if routes else [], "\n<b>你的追蹤</b>（未稅來回起價）")
 
 
 def sale_check(sale, tracks, state):
@@ -284,11 +337,11 @@ def sale_check(sale, tracks, state):
     rnd = sale.get("round", 1)
     lines = [f"🔍 <b>{html.escape(airline)}特價開賣後檢查</b>（第 {rnd} 次）",
              f"<i>{html.escape(sale.get('title', '')[:60])}</i>"]
+    buckets = {}
+    tl = lambda t: buckets.setdefault(target_of(t), [])
     # A. 你的追蹤
     mine = [t for t in tracks if t.get("active", True) and not state.get(t["id"], {}).get("expired")
             and (not t.get("airlines") or airline in t.get("airlines"))]
-    if mine:
-        lines.append("\n<b>你的追蹤</b>")
     for t in mine[:5]:
         pairs = pairs_of(t)[:8]  # 區間追蹤只抽前 8 天，避免太慢
         if not pairs:
@@ -299,20 +352,21 @@ def sale_check(sale, tracks, state):
         before = s.get("last")
         name = html.escape(route_of(t))
         if best is None:
-            lines.append(f"・{name}：這次查詢失敗，晚點再試")
+            tl(t).append(f"・{name}：這次查詢失敗，晚點再試")
             continue
         p = best["price"]
         if before is None:
-            lines.append(f"・{name}：目前 <b>{fmtp(p)}</b>（{html.escape(best['airline'])} {best['dates']}）")
+            tl(t).append(f"・{name}：目前 <b>{fmtp(p)}</b>（{html.escape(best['airline'])} {best['dates']}）")
         elif p < before:
-            lines.append(f"・{name}：{fmtp(before)} → <b>{fmtp(p)}</b>（降 NT${before - p:,}）📉　{html.escape(best['airline'])} {best['dates']}")
+            tl(t).append(f"・{name}：{fmtp(before)} → <b>{fmtp(p)}</b>（降 NT${before - p:,}）📉　{html.escape(best['airline'])} {best['dates']}")
         else:
-            lines.append(f"・{name}：{fmtp(p)}，沒有變便宜" + (f"（之前 {fmtp(before)}）" if p != before else ""))
+            tl(t).append(f"・{name}：{fmtp(p)}，沒有變便宜" + (f"（之前 {fmtp(before)}）" if p != before else ""))
         s.update(last=p, lastAirline=best["airline"], lastDates=best["dates"], lastOut=best["out"], url=best["url"],
                  lastCheck=datetime.now(TW).strftime("%m/%d %H:%M"))
         if s.get("min") is None or p < s["min"]:
             s.update(min=p, minAt=datetime.now(TW).strftime("%m/%d %H:%M"), minAirline=best["airline"], minDates=best["dates"])
     # B. 新聞裡的特價航線
+    n0 = len(lines)
     routes = sale.get("routes") or []
     if routes:
         lines.append("\n<b>新聞裡的特價航線</b>（Google Flights 單程含稅最低價）")
@@ -339,9 +393,7 @@ def sale_check(sale, tracks, state):
                 lines.append(f"・{label}：查不到（可能還沒更新、或被擋）　{news}")
         lines.append("\n<i>Google Flights 是含稅價，會比新聞的未稅價高；要輸入優惠碼的折扣這裡看不到。"
                      "便宜的座位很少，想搶的話直接到航空公司官網。</i>")
-    if not mine and not routes:
-        return
-    send_share("\n".join(lines))
+    send_sale(lines[:n0], buckets, lines[n0:] if routes else [], "\n<b>你的追蹤</b>")
 
 
 def test_run(tracks, state):
@@ -361,25 +413,75 @@ def test_run(tracks, state):
             tb = tiger.round_trip(t["origin"], t["dest"], pairs)
             if tb:
                 total = tb[0]
-                send_text(head + f"🐯 <b>虎航官網降價了！</b>\n{route}\n{fmtp(total + 500)} → <b>{fmtp(total)}</b>（降 NT$500，未稅來回）"
+                tsend(t, head + f"🐯 <b>虎航官網降價了！</b>\n{route}\n{fmtp(total + 500)} → <b>{fmtp(total)}</b>（降 NT$500，未稅來回）"
                           f"\n去 {dlabel(tb[1])} {fmtp(tb[3])}、回 {dlabel(tb[2])} {fmtp(tb[4])}"
                           "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
             else:
-                send_text(head + f"🐯 {route}：" + ("虎航官網這次沒抓到資料" if not tiger.ok(t["origin"], t["dest"]) else "這些日期虎航官網沒有票價"))
+                tsend(t, head + f"🐯 {route}：" + ("虎航官網這次沒抓到資料" if not tiger.ok(t["origin"], t["dest"]) else "這些日期虎航官網沒有票價"))
         best = cheapest(t, pairs)
         if best is None:
-            send_text(head + f"⚠️ {route}：Google Flights 這次查詢失敗（可能被擋）")
+            tsend(t, head + f"⚠️ {route}：Google Flights 這次查詢失敗（可能被擋）")
             continue
         p = best["price"]
         link = f"\n🔗 <a href=\"{html.escape(best['url'])}\">在 Google Flights 查看</a>"
         line = f"{html.escape(best['airline'])}　{best['dates']}　去程 {html.escape(best['out'])}"
-        send_text(head + f"📉 <b>降價了！</b>\n{route}\n{fmtp(p + 500)} → <b>{fmtp(p)}</b>（降 NT$500）"
+        tsend(t, head + f"📉 <b>降價了！</b>\n{route}\n{fmtp(p + 500)} → <b>{fmtp(p)}</b>（降 NT$500）"
                   f"\n{html.escape(dates_desc(t))}\n{line}\n追蹤以來最低：{fmtp(p)}" + link)
     if not n:
         send_text("🧪 測試：目前沒有進行中的追蹤，先到查詢頁「📉 降價追蹤」加一條。")
 
 
+def clean_target(v):
+    v = str(v or "").strip()
+    return v if re.fullmatch(r"-?\d{5,20}", v) else ""
+
+
+def apply_op(tracks):
+    """查詢頁送來的新增／刪除（朋友的通行碼不能直接改檔案，所以透過這裡改）。回傳要立刻檢查的追蹤 id"""
+    op = (os.environ.get("TRACK_OP") or "").strip()
+    raw = os.environ.get("TRACK_DATA") or ""
+    if not op or not raw:
+        return None
+    data = json.loads(raw)
+    who = clean_target(data.get("to")) or str(main_chat() or "")
+    if op == "add":
+        t = data.get("track") or {}
+        need = ("origin", "dest", "kind")
+        if not all(t.get(k) for k in need):
+            print("新增追蹤：資料不完整", t)
+            return None
+        t["id"] = re.sub(r"[^0-9a-z]", "", str(t.get("id") or ""))[:16] or datetime.now(TW).strftime("%y%m%d%H%M%S")
+        t["to"], t["owner"] = who, uid_of(who)
+        t.setdefault("active", True)
+        mine = [x for x in tracks if target_of(x) == who]
+        if len(mine) >= 10:
+            send_to(who, "⚠️ 每個人最多 10 條降價追蹤，請先到查詢頁刪掉不要的。")
+            return None
+        if not any(x["id"] == t["id"] for x in tracks):
+            tracks.append(t)
+        print("新增追蹤：", t["id"], t["origin"], t["dest"])
+        return t["id"]
+    if op == "delete":
+        tid = str(data.get("id") or "")
+        before = len(tracks)
+        tracks[:] = [x for x in tracks if not (x["id"] == tid and target_of(x) == who)]
+        print("刪除追蹤：", tid, "成功" if len(tracks) < before else "找不到（或不是你的）")
+        return ""
+    return None
+
+
 def main():
+    tracks0 = load(TRACKS, [])
+    # 舊的追蹤補上「傳給誰」（旅行群組）
+    for t in tracks0:
+        if not t.get("to") and main_chat():
+            t["to"], t["owner"] = str(main_chat()), uid_of(main_chat())
+    new_id = apply_op(tracks0)
+    save(TRACKS, tracks0)
+    if new_id == "":
+        return  # 只是刪除，不用查價
+    if new_id:
+        os.environ["TRACK_ID"] = new_id
     only = os.environ.get("TRACK_ID") or ""
     if only.strip().lower() == "test":
         tracks = load(TRACKS, [])
@@ -412,7 +514,7 @@ def main():
         route = html.escape(route_of(t))
         if not pairs:
             s["expired"] = True
-            send_text(f"⌛ <b>追蹤結束</b>：{route}\n{html.escape(dates_desc(t))}\n日期已經過了，之後不會再查。可以到查詢頁刪掉這一條。")
+            tsend(t, f"⌛ <b>追蹤結束</b>：{route}\n{html.escape(dates_desc(t))}\n日期已經過了，之後不會再查。可以到查詢頁刪掉這一條。")
             continue
         print(f"▶ {route_of(t)}　{dates_desc(t)}　共 {len(pairs)} 組")
         setup_core(t)
@@ -425,10 +527,10 @@ def main():
             failed += 1
             s["fails"] = s.get("fails", 0) + 1
             if s["fails"] == 3:
-                send_text(f"⚠️ <b>降價追蹤連續 3 次查詢失敗</b>：{route}\n可能被 Google 暫時擋住，之後會繼續自動再試。")
+                tsend(t, f"⚠️ <b>降價追蹤連續 3 次查詢失敗</b>：{route}\n可能被 Google 暫時擋住，之後會繼續自動再試。")
             continue
         if s.get("fails", 0) >= 3:
-            send_text(f"✅ <b>降價追蹤恢復正常</b>：{route}")
+            tsend(t, f"✅ <b>降價追蹤恢復正常</b>：{route}")
         s["fails"] = 0
 
         price, last = best["price"], s.get("last")
@@ -439,7 +541,7 @@ def main():
         new_min = s.get("min") is None or price < s["min"]
 
         if last is None:
-            send_share(f"👀 <b>開始追蹤</b>：{route}\n{html.escape(dates_desc(t))}\n\n目前最低：<b>{fmtp(price)}</b>（Google Flights 含稅）\n{line}\n"
+            tsend(t, share=True, text=f"👀 <b>開始追蹤</b>：{route}\n{html.escape(dates_desc(t))}\n\n目前最低：<b>{fmtp(price)}</b>（Google Flights 含稅）\n{line}\n"
                       + (f"\n{tline}\n" if tline else "") +
                       f"\n通知方式：{html.escape(notify_desc(n))}" + link)
         else:
@@ -465,7 +567,7 @@ def main():
                     msg = f"📉 <b>降價了！</b>\n{route}\n{fmtp(last)} → <b>{fmtp(price)}</b>（降 NT${-diff:,}）"
             if msg:
                 low = min(price, s.get("min") or price)
-                send_share(msg + f"\n{html.escape(dates_desc(t))}\n{line}\n追蹤以來最低：{fmtp(low)}"
+                tsend(t, share=True, text=msg + f"\n{html.escape(dates_desc(t))}\n{line}\n追蹤以來最低：{fmtp(low)}"
                           + ("　🆕 新低！" if new_min and s.get("min") is not None else "") + link)
 
         s.update(last=price, lastAirline=best["airline"], lastDates=best["dates"], lastOut=best["out"], url=best["url"])

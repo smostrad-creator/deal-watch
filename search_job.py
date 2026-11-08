@@ -6,6 +6,7 @@
 """
 import html
 import json
+import re
 import os
 import shutil
 import sys
@@ -53,13 +54,36 @@ def tg(method, data=None, files=None):
         print("Telegram 傳送失敗：", e)
 
 
+# ── 多人使用：每個人的結果只傳給他自己（查詢頁 ⚙️ 填的 Telegram ID）──
+TARGET = None   # 這次要傳到哪個聊天室；沒填就用 TELEGRAM_CHAT_ID（旅行群組）
+
+
+def clean_target(v):
+    v = str(v or "").strip()
+    return v if re.fullmatch(r"-?\d{5,20}", v) else None
+
+
+def uid_of(target):
+    """用 Telegram ID 算出一個代號當檔名（檔案在公開專案裡，不直接放 ID）"""
+    import hashlib
+    return hashlib.sha256(str(target).encode()).hexdigest()[:12]
+
+
+def chat_id():
+    return TARGET or os.environ.get("TELEGRAM_CHAT_ID")
+
+
+def result_path(uid, ext):
+    return os.path.join(OUT, f"u_{uid}.{ext}") if uid else os.path.join(OUT, f"latest.{ext}")
+
+
 def send_text(text):
-    chat = os.environ.get("TELEGRAM_CHAT_ID")
+    chat = chat_id()
     tg("sendMessage", {"chat_id": chat, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True})
 
 
 def send_file(path, caption=""):
-    chat = os.environ.get("TELEGRAM_CHAT_ID")
+    chat = chat_id()
     with open(path, "rb") as f:
         tg("sendDocument", {"chat_id": chat, "caption": caption}, {"document": (os.path.basename(path), f.read())})
 
@@ -171,7 +195,10 @@ def excel_from_json(R, keep, path):
 
 def resend(p):
     """查詢頁選好航空公司後：用上次的結果，只留選的航空，重新傳到 Telegram（不重新查詢）"""
-    path = os.path.join(OUT, "latest.json")
+    global TARGET
+    TARGET = clean_target(p.get("notify"))
+    uid = uid_of(TARGET) if TARGET else ""
+    path = result_path(uid, "json")
     R = json.load(open(path, encoding="utf-8"))
     if R.get("reqId") != p.get("reqId"):
         send_text("⚠️ 這份結果已經被新的查詢取代，請在查詢頁重新選一次航空公司。")
@@ -180,7 +207,7 @@ def resend(p):
     P = R.get("params") or {}
     lines = build_top_lines(R, set(keep))
     try:
-        excel_from_json(R, set(keep), os.path.join(OUT, "latest.xlsx"))
+        excel_from_json(R, set(keep), result_path(uid, "xlsx"))
         xok = True
     except Exception as e:
         print("Excel 重做失敗：", e)
@@ -205,7 +232,7 @@ def resend(p):
            ("\n\n📊 完整比價表：打開查詢頁看「最近結果」"))
     send_text(msg)
     if xok:
-        send_file(os.path.join(OUT, "latest.xlsx"), "比價 Excel")
+        send_file(result_path(uid, "xlsx"), "比價 Excel")
     R["sentAirlines"] = keep
     with open(path, "w", encoding="utf-8") as f:
         json.dump(R, f, ensure_ascii=False)
@@ -213,7 +240,10 @@ def resend(p):
 
 
 def main():
+    global TARGET
     p = json.loads(os.environ.get("SEARCH_PARAMS") or "{}")
+    TARGET = clean_target(p.get("notify"))
+    uid = uid_of(TARGET) if TARGET else ""
     if p.get("action") == "resend":
         return resend(p)
     req = p.get("reqId", "")
@@ -242,7 +272,7 @@ def main():
         # Excel 搬到 docs/results
         xfile = None
         if st.get("file") and os.path.exists(os.path.join(HERE, st["file"])):
-            xfile = "latest.xlsx"
+            xfile = os.path.basename(result_path(uid, "xlsx"))
             shutil.move(os.path.join(HERE, st["file"]), os.path.join(OUT, xfile))
 
         if res.get("kind") == "scan":
@@ -285,7 +315,7 @@ def main():
         names = [a["name"] for a in out.get("summary") or []]
         if len(names) > 1:
             # 先不傳結果：等使用者在查詢頁選好航空公司，按「確定」後才傳（只傳一次）
-            with open(os.path.join(OUT, "latest.json"), "w", encoding="utf-8") as f:
+            with open(result_path(uid, "json"), "w", encoding="utf-8") as f:
                 json.dump(out, f, ensure_ascii=False)
             send_text(f"✅ <b>{html.escape(route_name(p))}　查完了</b>\n"
                       f"找到 {len(names)} 家航空公司" + (f"，另有 {len(notes)} 家查不到價格" if notes else "") + "。\n\n"
@@ -295,7 +325,7 @@ def main():
             print("✓ 完成，等使用者選航空公司")
             return
         out["sentAirlines"] = names
-        with open(os.path.join(OUT, "latest.json"), "w", encoding="utf-8") as f:
+        with open(result_path(uid, "json"), "w", encoding="utf-8") as f:
             json.dump(out, f, ensure_ascii=False)
 
         # Telegram：沒價格的警告先傳，比較顯眼
@@ -316,7 +346,7 @@ def main():
     except Exception as e:
         traceback.print_exc()
         out.update(error=str(e))
-        with open(os.path.join(OUT, "latest.json"), "w", encoding="utf-8") as f:
+        with open(result_path(uid, "json"), "w", encoding="utf-8") as f:
             json.dump(out, f, ensure_ascii=False)
         send_text(f"❌ <b>查詢失敗</b>：{html.escape(route_name(p)) if p.get('origin') else ''}\n{html.escape(str(e))}")
 

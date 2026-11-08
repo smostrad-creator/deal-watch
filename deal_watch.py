@@ -332,7 +332,7 @@ def upcoming_events(reminders):
     now = datetime.now(TW)
     out = []
     for r in reminders:
-        if r.get("kind") == "tigerbase":
+        if r.get("kind") in ("tigerbase", "tgoffset"):
             continue
         start = datetime.fromisoformat(r["start"])
         if r.get("kind") == "sale":
@@ -383,13 +383,55 @@ TIGER_DROP_ONE = 0.70     # 或任何一條變成原本的 70% 以下
 TIGER_COOLDOWN_H = 12     # 同一條航線通知過後，幾小時內不再通知
 
 
+PAGE_URL = "https://{owner}.github.io/{repo}/"
+
+
+def answer_id_requests(reminders):
+    """朋友在 Telegram 對機器人按「開始」或傳任何訊息，回覆他的 Telegram ID（最慢 30 分鐘內）"""
+    token = os.environ.get("TELEGRAM_TOKEN")
+    if not token:
+        return reminders
+    box = next((r for r in reminders if r.get("kind") == "tgoffset"), None)
+    if box is None:
+        box = {"kind": "tgoffset", "offset": 0}
+        reminders.append(box)
+    try:
+        url = f"https://api.telegram.org/bot{token}/getUpdates?timeout=0&offset={box['offset']}"
+        data = json.loads(fetch(url).decode("utf-8"))
+    except Exception as e:
+        log(f"讀取機器人訊息失敗：{e}")
+        return reminders
+    repo = os.environ.get("GITHUB_REPOSITORY", "/")
+    owner, name = (repo.split("/") + [""])[:2]
+    page = PAGE_URL.format(owner=owner.lower(), repo=name) if owner else ""
+    done = set()
+    for u in data.get("result") or []:
+        box["offset"] = max(box["offset"], u["update_id"] + 1)
+        m = u.get("message") or {}
+        chat = m.get("chat") or {}
+        if chat.get("type") != "private" or chat.get("id") in done:
+            continue
+        done.add(chat["id"])
+        text = (f"👋 你好！你的 Telegram ID 是：\n<code>{chat['id']}</code>\n\n"
+                "打開查機票網頁 → 右上角 ⚙️ →「我的 Telegram ID」貼上這串數字 → 儲存。\n"
+                "之後你查機票、加降價追蹤，結果都只會私訊給你自己。" + (f"\n\n🔗 {page}" if page else ""))
+        body = json.dumps({"chat_id": chat["id"], "text": text, "parse_mode": "HTML",
+                           "disable_web_page_preview": True}).encode("utf-8")
+        try:
+            fetch(f"https://api.telegram.org/bot{token}/sendMessage", data=body)
+            log(f"已回覆 Telegram ID 給 {chat.get('first_name', '')}")
+        except Exception as e:
+            log(f"回覆 ID 失敗：{e}")
+    return reminders
+
+
 def tiger_watch(reminders):
     """每小時看一次虎航官網所有航線的最低價，跟上次比；大降價就推播，並觸發降價追蹤的虎航檢查"""
     try:
         import tiger
     except Exception:
         return reminders
-    base = next((r for r in reminders if r.get("kind") == "tigerbase"), None)
+    base = next((r for r in reminders if r.get("kind") in ("tigerbase", "tgoffset")), None)
     if base is None:
         base = {"kind": "tigerbase", "routes": {}, "alerted": {}}
         reminders.append(base)
@@ -561,7 +603,7 @@ def check_reminders(reminders):
     now = datetime.now(TW)
     keep = []
     for r in reminders:
-        if r.get("kind") == "tigerbase":
+        if r.get("kind") in ("tigerbase", "tgoffset"):
             keep.append(r)
             continue
         start = datetime.fromisoformat(r["start"])
@@ -652,6 +694,8 @@ def main():
         return
 
     reminders = check_reminders(load_json(REMIND_FILE, []))
+    if "--test" not in sys.argv:
+        reminders = answer_id_requests(reminders)
     if "--test" not in sys.argv and (datetime.now(TW).minute < 30 or "--search" in sys.argv):
         reminders = tiger_watch(reminders)   # 每小時一次（整點後那一次）
     run_sale_checks(reminders)
@@ -719,7 +763,7 @@ def main():
     log(f"新的促銷消息：{len(new)} 則")
 
     # 找開搶時間，加入提醒清單（同一個開搶時間＋相同航空只提醒一次）
-    have = {(r["start"], r["title"][:6]) for r in reminders if r.get("kind") != "tigerbase"}
+    have = {(r["start"], r["title"][:6]) for r in reminders if r.get("kind") not in ("tigerbase", "tgoffset")}
     have |= {("sale", r["start"], r.get("code")) for r in reminders if r.get("kind") == "sale"}
     for it in new:
         starts = []
