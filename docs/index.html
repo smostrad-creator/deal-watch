@@ -280,7 +280,7 @@ summary{cursor:pointer;color:var(--accent);font-weight:700}
 </head>
 <body>
 <div class="wrap">
-  <h1 class="toprow">查機票 <small class="ver">手機版 11/6b</small>
+  <h1 class="toprow">查機票 <small class="ver">手機版 11/7</small>
     <span class="topbtns"><button type="button" class="link" id="lastBtn">最近結果</button><button type="button" class="gearbtn" id="gear" aria-label="設定">⚙️</button></span></h1>
   <a class="note" id="updHint" hidden href="#">🔄 有新版本，點這裡更新</a>
   <div class="mtabs" role="group" aria-label="功能"><button type="button" id="mt-search" aria-pressed="true">🔍 查機票</button><button type="button" id="mt-track" aria-pressed="false">📉 降價追蹤</button></div>
@@ -489,6 +489,8 @@ summary{cursor:pointer;color:var(--accent);font-weight:700}
     <div class="pk-head"><span class="pk-t" id="st-title">設定</span></div>
     <div class="cf-body">
       <label class="f">GitHub 通行碼（token）<input id="st-token" type="password" autocomplete="off" placeholder="github_pat_…"></label>
+      <label class="f">我的 Telegram ID（查詢結果、降價通知傳到這裡）<input id="st-tg" inputmode="numeric" autocomplete="off" placeholder="例如 123456789"></label>
+      <p class="hint" style="margin:-6px 0 4px">不知道的話：在 Telegram 搜尋 <b>lo_flight_deal_bot</b> 按「開始」，最慢 30 分鐘機器人會回你。想傳到群組就填群組 ID（-開頭）。</p>
       <label class="f">GitHub 帳號<input id="st-owner" autocomplete="off"></label>
       <label class="f">專案名稱<input id="st-repo" autocomplete="off" placeholder="deal-watch"></label>
       <p class="hint" style="margin:0">只會存在這支手機的瀏覽器裡，不會傳到其他地方。</p>
@@ -1231,7 +1233,7 @@ function render(data, file){
 </script>
 <script>
 // 自動檢查新版：手機常常會暫存舊頁面，打開時比對 version.json
-const PAGE_VERSION = '11/6b';
+const PAGE_VERSION = '11/7';
 fetch('version.json?t=' + Date.now(), {cache: 'no-store'}).then(r => r.ok ? r.json() : null).then(v => {
   if (v && v.version && v.version !== PAGE_VERSION) {
     const a = document.getElementById('updHint');
@@ -1246,7 +1248,16 @@ const GH = {
   owner: localStorage.getItem('gh_owner') || (location.hostname.endsWith('github.io') ? location.hostname.split('.')[0] : ''),
   repo: localStorage.getItem('gh_repo') || (location.hostname.endsWith('github.io') ? location.pathname.split('/')[1] : ''),
   token: localStorage.getItem('gh_token') || '',
+  tg: localStorage.getItem('gh_tg') || '',
 };
+let _uid = null;
+async function myUid(){
+  if (!GH.tg) return '';
+  if (_uid && _uid.tg === GH.tg) return _uid.v;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(GH.tg));
+  const v = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 12);
+  _uid = {tg: GH.tg, v}; return v;
+}
 let currentRun = null, currentReq = null, runStart = 0, estimateMin = 3, pollTimer = null;
 const LEAVE_TIP = '⚠️ 請先不要關掉頁面，查完要選航空公司，選好才會傳結果到 Telegram。\n（不小心關掉也沒關係，查完 Telegram 會通知你回來選。）';
 
@@ -1265,27 +1276,35 @@ function excelUrl(f){ return `https://raw.githubusercontent.com/${GH.owner}/${GH
 
 // ── 設定（通行碼）──
 function openSettings(){
-  $('st-owner').value = GH.owner; $('st-repo').value = GH.repo; $('st-token').value = GH.token;
+  $('st-owner').value = GH.owner; $('st-repo').value = GH.repo; $('st-token').value = GH.token; $('st-tg').value = GH.tg;
   $('st').hidden = false; document.body.style.overflow = 'hidden';
 }
 $('st-save').onclick = () => {
   GH.owner = $('st-owner').value.trim(); GH.repo = $('st-repo').value.trim(); GH.token = $('st-token').value.trim();
-  try { localStorage.setItem('gh_owner', GH.owner); localStorage.setItem('gh_repo', GH.repo); localStorage.setItem('gh_token', GH.token); } catch {}
+  GH.tg = $('st-tg').value.replace(/[^\d-]/g, '');
+  try { localStorage.setItem('gh_owner', GH.owner); localStorage.setItem('gh_repo', GH.repo); localStorage.setItem('gh_token', GH.token); localStorage.setItem('gh_tg', GH.tg); } catch {}
   $('st').hidden = true; document.body.style.overflow = '';
   checkSetup();
 };
 $('st-cancel').onclick = () => { $('st').hidden = true; document.body.style.overflow = ''; };
 $('gear').onclick = openSettings;
-function checkSetup(){ $('setupHint').hidden = !!(GH.token && GH.owner && GH.repo); }
+function checkSetup(){
+  const ok = !!(GH.token && GH.owner && GH.repo && GH.tg);
+  $('setupHint').hidden = ok;
+  $('setupHint').textContent = !GH.token ? '第一次使用：請按右上角 ⚙️ 貼上通行碼和你的 Telegram ID。'
+    : '請按右上角 ⚙️ 填「我的 Telegram ID」，查詢結果才知道要傳給誰。';
+}
 checkSetup();
 
 // ── 送出查詢 ──
 async function startSearch(body){
   if (!GH.token) { openSettings(); return showErr('第一次使用要先設定 GitHub 通行碼（右上角 ⚙️）。'); }
+  if (!GH.tg) { openSettings(); return showErr('要先填「我的 Telegram ID」（右上角 ⚙️），結果才知道要傳給誰。'); }
   notesShown = false; $('npb').hidden = true; $('err').hidden = true; $('note').hidden = true;
   $('results').hidden = true; $('alf').hidden = true; lastAsk = null; chosen = null; lastResult = null;
   currentReq = Date.now().toString(36);
   body.reqId = currentReq;
+  body.notify = GH.tg;
   body.originLabel = $('origin').value; body.destLabel = $('dest').value;
   const n = pairCount();
   estimateMin = body.mode === 'scan' ? Math.max(2, Math.round((n * 6 + 60) / 60) + 1) : Math.max(2, Math.round(n * 0.5 + 1.5));
@@ -1328,7 +1347,9 @@ async function pollRun(){
 async function loadResults(req, tries){
   let R;
   try {
-    const r = await gh('/contents/docs/results/latest.json?ref=main');
+    const uid = await myUid();
+    let r = await gh(`/contents/docs/results/${uid ? 'u_' + uid : 'latest'}.json?ref=main`, {allow404: true});
+    if (r.status === 404) return showErr('你還沒有查詢結果，先查一次機票吧。');
     const j = await r.json();
     R = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(j.content.replace(/\n/g, '')), c => c.charCodeAt(0))));
   } catch (e) { return showErr('讀不到查詢結果：' + e.message); }
@@ -1437,7 +1458,7 @@ async function resendTelegram(pick){
   const box = $('note');
   try {
     const r = await gh('/actions/workflows/search.yml/dispatches', {method: 'POST',
-      body: JSON.stringify({ref: 'main', inputs: {params: JSON.stringify({action: 'resend', reqId: lastResult.reqId, airlines: pick})}})});
+      body: JSON.stringify({ref: 'main', inputs: {params: JSON.stringify({action: 'resend', reqId: lastResult.reqId, airlines: pick, notify: GH.tg})}})});
     if (r.status !== 204) throw new Error(`GitHub 回應 ${r.status}`);
     lastResult.sentAirlines = pick;
     box.textContent = `📤 已經把結果（${pick.length} 家航空）送去 Telegram，大約 30 秒～1 分鐘後會收到，Excel 也會一起傳。\n✅ 現在可以關掉頁面了。之後想改選，再回來按「更改航空公司」就好。`;
@@ -1551,14 +1572,16 @@ $('addTrack').onclick = async () => {
   if (m === 'below') { t.notify.target = Number($('tTarget').value); if (!(t.notify.target > 0)) return showErr('請填目標價，例如 8000。'); }
   if (m === 'dropBy') { t.notify.amount = Number($('tAmount').value); if (!(t.notify.amount > 0)) return showErr('請填降多少才通知，例如 300。'); }
 
+  if (!GH.tg) { openSettings(); return showErr('要先填「我的 Telegram ID」（右上角 ⚙️），降價才知道要通知誰。'); }
   const btn = $('addTrack'); btn.disabled = true; btn.textContent = '加入中…';
   try {
-    await updateTracks(list => [...list, t], '新增追蹤：' + t.origin + '-' + t.dest);
-    await gh('/actions/workflows/track.yml/dispatches', {method: 'POST',
-      body: JSON.stringify({ref: 'main', inputs: {track_id: t.id}})}).catch(() => {});
-    $('note').textContent = '✅ 已加入追蹤！幾分鐘內 Telegram 會收到「開始追蹤」和目前最低價，之後每天早上 8 點、晚上 8 點自動檢查。';
+    const r = await gh('/actions/workflows/track.yml/dispatches', {method: 'POST',
+      body: JSON.stringify({ref: 'main', inputs: {op: 'add', data: JSON.stringify({to: GH.tg, track: t})}})});
+    if (r.status !== 204) throw new Error(`GitHub 回應 ${r.status}`);
+    $('note').textContent = '✅ 已送出！約 1～3 分鐘後加入清單，Telegram 會收到「開始追蹤」和目前最低價；之後每天早上 8 點、晚上 8 點自動檢查。';
     $('note').hidden = false;
-    loadTracks();
+    $('tlist').insertAdjacentHTML('afterbegin', `<div class="tcard"><div class="t1"><b>${esc(t.originLabel)} ⇄ ${esc(t.destLabel)}</b></div><div class="t2">加入中…（約 1～3 分鐘，之後按「重新整理」）</div></div>`);
+    setTimeout(loadTracks, 90000);
   } catch (e) { showErr('加入失敗：' + e.message); }
   btn.disabled = false; btn.textContent = '＋ 加入降價追蹤';
 };
@@ -1571,6 +1594,8 @@ async function loadTracks(){
   let list, state;
   try { list = (await getFile('tracks.json')).data || []; state = (await getFile('track_state.json')).data || {}; }
   catch (e) { box.innerHTML = `<p class="hint">讀取失敗：${esc(e.message)}</p>`; return; }
+  const uid = await myUid();
+  list = list.filter(t => !t.owner || t.owner === uid);  // 只顯示自己的追蹤
   if (!list.length) { box.innerHTML = '<p class="hint">還沒有追蹤的航班。在上面選好條件，按「＋ 加入降價追蹤」。</p>'; return; }
   const stopTxt = {0: '直飛', 1: '最多轉 1 次', any: '可轉機'};
   box.innerHTML = list.slice().reverse().map(t => {
@@ -1590,8 +1615,13 @@ async function loadTracks(){
   box.querySelectorAll('.tdel').forEach(b => b.onclick = async () => {
     if (!confirm('確定要刪除這條追蹤嗎？')) return;
     b.disabled = true; b.textContent = '刪除中…';
-    try { await updateTracks(list => list.filter(x => x.id !== b.dataset.id), '刪除追蹤'); loadTracks(); }
-    catch (e) { showErr('刪除失敗：' + e.message); b.disabled = false; b.textContent = '刪除'; }
+    try {
+      const r = await gh('/actions/workflows/track.yml/dispatches', {method: 'POST',
+        body: JSON.stringify({ref: 'main', inputs: {op: 'delete', data: JSON.stringify({to: GH.tg, id: b.dataset.id})}})});
+      if (r.status !== 204) throw new Error(`GitHub 回應 ${r.status}`);
+      b.textContent = '刪除中…（約 1 分鐘）';
+      setTimeout(loadTracks, 60000);
+    } catch (e) { showErr('刪除失敗：' + e.message); b.disabled = false; b.textContent = '刪除'; }
   });
 }
 $('tRefresh').onclick = loadTracks;
