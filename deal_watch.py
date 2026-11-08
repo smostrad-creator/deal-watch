@@ -332,7 +332,7 @@ def upcoming_events(reminders):
     now = datetime.now(TW)
     out = []
     for r in reminders:
-        if r.get("kind") in ("tigerbase", "tgoffset"):
+        if r.get("kind") in ("tigerbase", "tgoffset", "subs"):
             continue
         start = datetime.fromisoformat(r["start"])
         if r.get("kind") == "sale":
@@ -404,6 +404,10 @@ def answer_id_requests(reminders):
     repo = os.environ.get("GITHUB_REPOSITORY", "/")
     owner, name = (repo.split("/") + [""])[:2]
     page = PAGE_URL.format(owner=owner.lower(), repo=name) if owner else ""
+    subs = next((r for r in reminders if r.get("kind") == "subs"), None)
+    if subs is None:
+        subs = {"kind": "subs", "ids": []}
+        reminders.append(subs)
     done = set()
     for u in data.get("result") or []:
         box["offset"] = max(box["offset"], u["update_id"] + 1)
@@ -412,9 +416,19 @@ def answer_id_requests(reminders):
         if chat.get("type") != "private" or chat.get("id") in done:
             continue
         done.add(chat["id"])
-        text = (f"👋 你好！你的 Telegram ID 是：\n<code>{chat['id']}</code>\n\n"
-                "打開查機票網頁 → 右上角 ⚙️ →「我的 Telegram ID」貼上這串數字 → 儲存。\n"
-                "之後你查機票、加降價追蹤，結果都只會私訊給你自己。" + (f"\n\n🔗 {page}" if page else ""))
+        cid = str(chat["id"])
+        msg = (m.get("text") or "").strip()
+        if msg.startswith("/stop") or msg in ("停止", "取消", "不要"):
+            subs["ids"] = [x for x in subs["ids"] if x != cid]
+            text = "好的，之後不會再私訊特價消息給你。想再收，傳「開始」就好。\n（你自己查機票、降價追蹤的通知不受影響）"
+        else:
+            new = cid not in subs["ids"]
+            if new:
+                subs["ids"].append(cid)
+            text = (f"👋 你好！你的 Telegram ID 是：\n<code>{cid}</code>\n\n"
+                    "打開查機票網頁 → 右上角 ⚙️ →「我的 Telegram ID」貼上這串數字 → 儲存。\n"
+                    "之後你查機票、加降價追蹤，結果都只會私訊給你自己。\n\n"
+                    "🔥 機票特價、開搶提醒也會私訊給你；不想收的話傳「停止」。" + (f"\n\n🔗 {page}" if page else ""))
         body = json.dumps({"chat_id": chat["id"], "text": text, "parse_mode": "HTML",
                            "disable_web_page_preview": True}).encode("utf-8")
         try:
@@ -431,7 +445,7 @@ def tiger_watch(reminders):
         import tiger
     except Exception:
         return reminders
-    base = next((r for r in reminders if r.get("kind") in ("tigerbase", "tgoffset")), None)
+    base = next((r for r in reminders if r.get("kind") in ("tigerbase", "tgoffset", "subs")), None)
     if base is None:
         base = {"kind": "tigerbase", "routes": {}, "alerted": {}}
         reminders.append(base)
@@ -603,7 +617,7 @@ def check_reminders(reminders):
     now = datetime.now(TW)
     keep = []
     for r in reminders:
-        if r.get("kind") in ("tigerbase", "tgoffset"):
+        if r.get("kind") in ("tigerbase", "tgoffset", "subs"):
             keep.append(r)
             continue
         start = datetime.fromisoformat(r["start"])
@@ -641,13 +655,17 @@ def share_targets():
         return []
 
 
+SUBSCRIBERS = []   # 對機器人按過「開始」的朋友：特價消息也私訊給他們
+
+
 def send_telegram(text):
-    """特價快報的通知：傳到你的群組，也傳到「分享群組.txt」裡的每個地方"""
+    """特價快報的通知：傳到你的群組、「分享群組.txt」裡的每個地方，以及訂閱的朋友"""
     token, chat = os.environ.get("TELEGRAM_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
     if not token or not chat:
         log("（沒有設定 TELEGRAM_TOKEN / TELEGRAM_CHAT_ID，只印在畫面上）\n" + text)
         return
-    for target in [chat] + [t for t in share_targets() if t != chat]:
+    targets = list(dict.fromkeys([str(chat)] + [str(t) for t in share_targets()] + [str(t) for t in SUBSCRIBERS]))
+    for target in targets:
         body = json.dumps({"chat_id": target, "text": text, "parse_mode": "HTML",
                            "disable_web_page_preview": True}).encode("utf-8")
         try:
@@ -693,9 +711,12 @@ def main():
         log("已傳送測試訊息")
         return
 
-    reminders = check_reminders(load_json(REMIND_FILE, []))
+    reminders = load_json(REMIND_FILE, [])
+    SUBSCRIBERS[:] = next((r.get("ids", []) for r in reminders if r.get("kind") == "subs"), [])
+    reminders = check_reminders(reminders)
     if "--test" not in sys.argv:
         reminders = answer_id_requests(reminders)
+        SUBSCRIBERS[:] = next((r.get("ids", []) for r in reminders if r.get("kind") == "subs"), [])
     if "--test" not in sys.argv and (datetime.now(TW).minute < 30 or "--search" in sys.argv):
         reminders = tiger_watch(reminders)   # 每小時一次（整點後那一次）
     run_sale_checks(reminders)
@@ -763,7 +784,7 @@ def main():
     log(f"新的促銷消息：{len(new)} 則")
 
     # 找開搶時間，加入提醒清單（同一個開搶時間＋相同航空只提醒一次）
-    have = {(r["start"], r["title"][:6]) for r in reminders if r.get("kind") not in ("tigerbase", "tgoffset")}
+    have = {(r["start"], r["title"][:6]) for r in reminders if r.get("kind") not in ("tigerbase", "tgoffset", "subs")}
     have |= {("sale", r["start"], r.get("code")) for r in reminders if r.get("kind") == "sale"}
     for it in new:
         starts = []
