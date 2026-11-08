@@ -460,12 +460,21 @@ def apply_op(tracks):
         if not any(x["id"] == t["id"] for x in tracks):
             tracks.append(t)
         print("新增追蹤：", t["id"], t["origin"], t["dest"])
+        air = "、".join(t.get("airlines") or []) or "全部"
+        send_to(who, f"✅ <b>已加入降價追蹤</b>（你的第 {len(mine) + 1} 條，最多 10 條）\n"
+                     f"{html.escape(route_of(t))}\n{html.escape(dates_desc(t))}\n"
+                     f"通知方式：{html.escape(notify_desc(t.get('notify') or {}))}\n航空：{html.escape(air)}\n\n"
+                     "接下來會查一次目前價格（幾分鐘內傳給你），之後每天早上 8 點、晚上 8 點自動檢查。")
         return t["id"]
     if op == "delete":
         tid = str(data.get("id") or "")
-        before = len(tracks)
-        tracks[:] = [x for x in tracks if not (x["id"] == tid and target_of(x) == who)]
-        print("刪除追蹤：", tid, "成功" if len(tracks) < before else "找不到（或不是你的）")
+        gone = [x for x in tracks if x["id"] == tid and target_of(x) == who]
+        tracks[:] = [x for x in tracks if x not in gone]
+        print("刪除追蹤：", tid, "成功" if gone else "找不到（或不是你的）")
+        if gone:
+            send_to(who, f"🗑️ <b>已刪除降價追蹤</b>\n{html.escape(route_of(gone[0]))}\n{html.escape(dates_desc(gone[0]))}")
+        else:
+            send_to(who, "⚠️ 刪除失敗：找不到這條追蹤（可能已經刪過了）。")
         return ""
     return None
 
@@ -526,6 +535,9 @@ def main():
         if best is None:
             failed += 1
             s["fails"] = s.get("fails", 0) + 1
+            if s.get("last") is None and s["fails"] == 1:
+                tsend(t, f"⚠️ {route}：這次查價失敗（可能被 Google 暫時擋住），追蹤已經加好了，"
+                         "會在下次（早上 8 點或晚上 8 點）再查。" + (f"\n\n{tline}" if tline else ""))
             if s["fails"] == 3:
                 tsend(t, f"⚠️ <b>降價追蹤連續 3 次查詢失敗</b>：{route}\n可能被 Google 暫時擋住，之後會繼續自動再試。")
             continue
