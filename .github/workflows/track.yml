@@ -14,6 +14,14 @@ on:
         description: "特價開賣後加查（特價快報自動填，不用自己填）"
         required: false
         default: ""
+      op:
+        description: "新增或刪除追蹤（查詢頁自動填，不用自己填）"
+        required: false
+        default: ""
+      data:
+        description: "追蹤資料（查詢頁自動填，不用自己填）"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -40,6 +48,8 @@ jobs:
         env:
           TRACK_ID: ${{ inputs.track_id }}
           SALE: ${{ inputs.sale }}
+          TRACK_OP: ${{ inputs.op }}
+          TRACK_DATA: ${{ inputs.data }}
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -49,7 +59,7 @@ jobs:
         run: |
           git config user.name "price-track-bot"
           git config user.email "price-track-bot@users.noreply.github.com"
-          git add track_state.json
+          git add track_state.json tracks.json
           git diff --cached --quiet && exit 0
           git commit -m "更新追蹤狀態"
           for i in 1 2 3; do
