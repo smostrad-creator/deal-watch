@@ -36,5 +36,24 @@
     10440
    ]
   ]
+ },
+ "mw7rsdv3": {
+  "lastCheck": "11/08 19:49",
+  "fails": 0,
+  "last": 8945,
+  "lastAirline": "長榮航空",
+  "lastDates": "6/1(二)～6/7(一)",
+  "lastOut": "07:40 - 09:55",
+  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDYtMDEoAGoFEgNUUEVyBRIDU0dOGhwSCjIwMjctMDYtMDcoAGoFEgNTR05yBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
+  "min": 8945,
+  "minAt": "11/08 19:49",
+  "minAirline": "長榮航空",
+  "minDates": "6/1(二)～6/7(一)",
+  "history": [
+   [
+    "11/08 19:49",
+    8945
+   ]
+  ]
  }
 }
