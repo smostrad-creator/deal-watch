@@ -1230,39 +1230,6 @@ null
 },
 {
 "kind": "sale",
-"start": "2026-11-09T23:00:00+08:00",
-"title": "搶票倒數！2026 ITF旅展航空優惠懶人包 虎航999元起、華航76折、星宇滿2萬抽商務艙 | 鏡週刊",
-"airline": "台灣虎航",
-"code": "IT",
-"routes": [
-{
-"from": "RMQ",
-"to": "CTS",
-"fromName": "台中",
-"toName": "札幌",
-"price": null
-},
-{
-"from": "TPE",
-"to": "HKG",
-"fromName": "桃園",
-"toName": "香港",
-"price": null
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1,
-2,
-3,
-4
-]
-},
-{
-"kind": "sale",
 "start": "2026-11-10T00:00:00+08:00",
 "title": "香港航空「週二激賞飛」凌晨開搶！包23kg寄艙行李 台北來回$230起、首爾$600起",
 "airline": "香港航空",
