@@ -1253,39 +1253,6 @@ null
 },
 {
 "kind": "sale",
-"start": "2026-11-09T14:03:09.108711+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"routes": [
-{
-"from": "TPE",
-"to": "OKA",
-"fromName": "台北",
-"toName": "沖繩",
-"price": 999
-},
-{
-"from": "KHH",
-"to": "CTS",
-"fromName": "高雄",
-"toName": "札幌",
-"price": 5099
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1,
-2,
-3,
-4
-]
-},
-{
-"kind": "sale",
 "start": "2026-11-10T00:00:00+08:00",
 "title": "香港航空「週二激賞飛」凌晨開搶！包23kg寄艙行李 台北來回$230起、首爾$600起",
 "airline": "香港航空",
