@@ -67,15 +67,24 @@ def tsend(t, text, share=False):
         send_to(chat, text)
 
 
+def subscribers():
+    """對機器人按過「開始」的人（特價快報記在 reminders.json）"""
+    try:
+        with open(os.path.join(HERE, "reminders.json"), encoding="utf-8") as f:
+            return [str(x) for r in json.load(f) if r.get("kind") == "subs" for x in r.get("ids", [])]
+    except Exception:
+        return []
+
+
 def send_sale(head, buckets, route_part, track_title):
-    """特價加查：每個人只收到自己的追蹤；旅行群組另外收到新聞航線，並分享出去"""
+    """特價加查：特價航線大家都收到（群組、分享、訂閱的人）；每個人另外只看到自己的追蹤"""
     main = str(main_chat())
-    chats = set(buckets) | ({main} if route_part else set())
+    chats = set(buckets) | ({main} | set(subscribers()) if route_part else set())
     for chat in chats:
         part = buckets.get(chat) or []
-        if not part and chat != main:
+        if not part and not route_part:
             continue
-        msg = "\n".join(head + ([track_title] + part if part else []) + (route_part if (chat == main or part) else []))
+        msg = "\n".join(head + ([track_title] + part if part else []) + route_part)
         if chat == main:
             send_share(msg)
         else:
@@ -281,9 +290,13 @@ def cheapest_oneway(frm, to, dates):
 
 def tiger_sale_check(sale, tracks, state):
     """虎航特價：直接看虎航官網的每日最低價（未稅單程起價）"""
+    official = sale.get("source") == "official"
     after = sale.get("after")
     when = f"開賣後 {after} 分鐘" if after else f"第 {sale.get('round', 1)} 次"
-    lines = [f"🐯 <b>虎航官網價格檢查</b>（{when}）", f"<i>{html.escape(sale.get('title', '')[:60])}</i>"]
+    if official:
+        lines = ["🐯 <b>虎航特價：你的追蹤</b>", "<i>虎航官網剛出現特價，看看你追蹤的航線現在多少</i>"]
+    else:
+        lines = [f"🐯 <b>虎航官網價格檢查</b>（{when}）", f"<i>{html.escape(sale.get('title', '')[:60])}</i>"]
     tomorrow = date.today() + timedelta(days=1)
     a, b = sale.get("travel") or [None, None]
     a = max(date.fromisoformat(a), tomorrow) if a else tomorrow
@@ -311,22 +324,25 @@ def tiger_sale_check(sale, tracks, state):
     n0 = len(lines)
     routes = sale.get("routes") or []
     if routes:
-        lines.append(f"\n<b>新聞裡的特價航線</b>（單程未稅起價，出發 {dlabel(a)}～{dlabel(b)}）")
+        src = "官網大降價的航線" if "官網偵測" in (sale.get("title") or "") else "新聞裡的特價航線"
+        lines.append(f"\n<b>{src}</b>（單程未稅起價，出發 {dlabel(a)}～{dlabel(b)}）")
     for r in routes[:6]:
         days = {d: p for d, p in tiger.daily(r["from"], r["to"]).items() if a.isoformat() <= d <= b.isoformat()}
         label = f"{html.escape(r.get('fromName') or tiger.name(r['from']))} → {html.escape(r.get('toName') or tiger.name(r['to']))}"
-        news = f"　新聞 {r['price']:,} 元起" if r.get("price") else ""
+        news = (f"　新聞 {r['price']:,} 元起" if "官網偵測" not in (sale.get("title") or "") else "") if r.get("price") else ""
         if not days:
             lines.append(f"・{label}：" + ("虎航官網暫時抓不到資料" if not tiger.ok(r["from"], r["to"]) else "這段期間沒有票價") + news)
             continue
         low = min(days.values())
         dates = sorted(d for d, p in days.items() if p == low)
         show = "、".join(dlabel(date.fromisoformat(d)) for d in dates[:5]) + (f" 等 {len(dates)} 天" if len(dates) > 5 else "")
-        hit = "　✅ 有特價" if r.get("price") and low <= r["price"] else ""
+        hit = "　✅ 有特價" if r.get("price") and low <= r["price"] and news else ""
         lines.append(f"・{label}：最低 <b>{fmtp(low)}</b>　{show}{news}{hit}")
     lines.append("\n<i>這是虎航官網的單人未稅起價，結帳會再加稅金；要輸入優惠碼的折扣這裡看不到。</i>"
                  "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
-    send_sale(lines[:n0], buckets, lines[n0:] if routes else [], "\n<b>你的追蹤</b>（未稅來回起價）")
+    # 官網偵測到的特價：航線已經在「虎航官網出現特價！」講過了，這裡只傳給有追蹤的人
+    send_sale(lines[:n0], buckets, lines[n0:] if (routes and not official) else [],
+              "" if official else "\n<b>你的追蹤</b>（未稅來回起價）")
 
 
 def sale_check(sale, tracks, state):

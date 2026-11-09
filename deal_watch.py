@@ -301,6 +301,7 @@ def dispatch_sale_check(chk, rnd, after=None):
         log("（沒有 GITHUB_TOKEN，略過特價加查）")
         return False
     payload = {k: chk[k] for k in ("airline", "code", "routes", "travel", "title")}
+    payload["source"] = chk.get("source", "news")
     payload["round"] = rnd
     payload["after"] = after
     body = json.dumps({"ref": "main", "inputs": {"sale": json.dumps(payload, ensure_ascii=False)}}).encode()
@@ -322,6 +323,8 @@ TIGER_AFTER = (1, 15, 30, 60)  # 虎航：直接看官網價格，開賣後 1、
 
 def sale_rounds(r):
     """這筆特價要在開賣後第幾分鐘加查：[(第幾次, 幾分鐘), ...]"""
+    if r.get("source") == "official":
+        return [(1, 1)]  # 官網偵測到的：只查一次「你的追蹤」，航線已經在偵測通知裡講過了
     mins = TIGER_AFTER if r.get("code") == "IT" else SALE_AFTER
     return list(enumerate(mins, 1))
 WAIT_WINDOW = 80        # 接下來幾分鐘內有事情要做，就留著等，時間到準時做
@@ -503,7 +506,7 @@ def tiger_watch(reminders):
         if a in tiger.TW_STATIONS:
             routes.append({"from": a, "to": b, "fromName": tiger.name(a), "toName": tiger.name(b), "price": v["min"]})
     reminders.append({"kind": "sale", "start": (now - timedelta(minutes=1)).isoformat(),
-                      "title": "虎航官網偵測到特價", "airline": "台灣虎航", "code": "IT",
+                      "title": "虎航官網偵測到特價", "airline": "台灣虎航", "code": "IT", "source": "official",
                       "routes": routes, "travel": [None, None]})
     return reminders
 
