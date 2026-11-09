@@ -1257,14 +1257,9 @@ null
 "done": [
 1,
 2,
-3
+3,
+4
 ]
-},
-{
-"title": "搶票倒數！2026 ITF旅展航空優惠懶人包 虎航999元起、華航76折、星宇滿2萬抽商務艙 | 鏡週刊（台灣虎航推出2026ITF線上旅展促銷，全航線單程未稅999元起，即日起開賣至11月9日晚間…）",
-"link": "https://today.line.me/tw/v3/article/kEpRz3L?referral=TOPIC-flowering",
-"start": "2026-11-09T23:00:00+08:00",
-"sent": true
 },
 {
 "kind": "sale",
@@ -1277,50 +1272,9 @@ null
 null,
 null
 ],
-"done": []
-},
-{
-"title": "香港航空「週二激賞飛」凌晨開搶！包23kg寄艙行李 台北來回$230起、首爾$600起（香港航空推出全新一輪「週二激賞飛」限定機票優惠，於明日（11月10日）凌晨0時0分至晚上11…）",
-"link": "https://utravel.com.hk/news/detail/20117576/%E9%A6%99%E6%B8%AF%E8%88%AA%E7%A9%BA-%E9%80%B1%E4%BA%8C%E6%BF%80%E8%B3%9E%E9%A3%9B-%E5%87%8C%E6%99%A8%E9%96%8B%E6%90%B6-%E5%8C%85-kg%E5%AF%84%E8%89%99%E8%A1%8C%E6%9D%8E-%E5%8F%B0%E5%8C%97%E4%BE%86%E5%9B%9E-%E8%B5%B7-%E9%A6%96%E7%88%BE-%E8%B5%B7",
-"start": "2026-11-10T00:00:00+08:00",
-"sent": true
-},
-{
-"kind": "sale",
-"start": "2026-11-09T21:07:33.861186+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "TPE",
-"to": "SDJ",
-"fromName": "台北",
-"toName": "仙台",
-"price": 2299
-},
-{
-"from": "KHH",
-"to": "NGO",
-"fromName": "高雄",
-"toName": "名古屋",
-"price": 2199
-},
-{
-"from": "TPE",
-"to": "XX6",
-"fromName": "台北",
-"toName": "XX6",
-"price": 1899
-}
-],
-"travel": [
-null,
-null
-],
 "done": [
-1
+1,
+2
 ]
 }
 ]
