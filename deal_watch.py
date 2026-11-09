@@ -490,14 +490,16 @@ def tiger_watch(reminders):
     if not hit:
         log(f"虎航官網：{len(cur)} 條航線，沒有大降價")
         return reminders
-    lines = [f"🐯 <b>虎航官網出現特價！</b>\n{len(hit)} 條航線大降價（直接看官網發現的，不是新聞）\n"]
+    lines = [f"🐯 <b>虎航官網出現特價！</b>", f"<i>{len(hit)} 條航線大降價（直接看官網發現的）</i>", "━━━━━━━━━━"]
     for ratio, k, o, v in hit[:10]:
         a, b = k.split("-")
-        ds = "、".join(f"{int(x[5:7])}/{int(x[8:])}" for x in v["days"])
-        lines.append(f"・{tiger.name(a)} → {tiger.name(b)}：NT${o:,} → <b>NT${v['min']:,}</b>（降 {round((1 - ratio) * 100)}%）　{ds}")
+        ds = "、".join(f"{int(x[5:7])}/{int(x[8:])}" for x in v["days"][:4]) + (" 等" if len(v["days"]) > 4 else "")
+        lines += [f"\n✈️ <b>{tiger.name(a)} → {tiger.name(b)}</b>",
+                  f"💰 <b>NT${v['min']:,}</b>（原本 {o:,}，降 {round((1 - ratio) * 100)}%）",
+                  f"📅 {ds}"]
         alerted[k] = now.isoformat()
-    lines.append("\n<i>單程未稅起價，結帳會再加稅金。特價座位很少，建議盡快到官網看。</i>"
-                 "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
+    lines += ["━━━━━━━━━━", "<i>單程未稅起價，結帳另加稅金。特價座位很少，建議盡快去搶。</i>",
+              "🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>"]
     send_telegram("\n".join(lines))
     # 順便觸發降價追蹤的虎航檢查（你的追蹤＋這些航線）
     routes = []

@@ -288,6 +288,17 @@ def cheapest_oneway(frm, to, dates):
     return best
 
 
+def short_day(d):
+    """日期短寫：11/24"""
+    d = date.fromisoformat(d) if isinstance(d, str) else d
+    return f"{d.month}/{d.day}"
+
+
+def route_block(label, lines_):
+    """一條航線一塊，手機上比較好讀"""
+    return [f"\n✈️ <b>{label}</b>"] + lines_
+
+
 def tiger_sale_check(sale, tracks, state):
     """虎航特價：直接看虎航官網的每日最低價（未稅單程起價）"""
     official = sale.get("source") == "official"
@@ -311,11 +322,12 @@ def tiger_sale_check(sale, tracks, state):
         tb = tiger.round_trip(t["origin"], t["dest"], pairs_of(t))
         name = html.escape(route_of(t))
         if tb is None:
-            tl(t).append(f"・{name}：" + ("虎航官網暫時抓不到資料" if not tiger.ok(t["origin"], t["dest"]) else "這些日期虎航沒有票價"))
+            tl(t).extend(route_block(name, ["⚠️ " + ("虎航官網暫時抓不到資料" if not tiger.ok(t["origin"], t["dest"]) else "這些日期虎航沒有票價")]))
             continue
         total = tb[0]
-        diff = "" if before is None else (f"　📉 降 NT${before - total:,}" if total < before else "　沒有變便宜" if total == before else f"　漲 NT${total - before:,}")
-        tl(t).append(f"・{name}：<b>{fmtp(total)}</b>（去 {dlabel(tb[1])} {fmtp(tb[3])}、回 {dlabel(tb[2])} {fmtp(tb[4])}）{diff}")
+        diff = "" if before is None else (f"（📉 降 {before - total:,}）" if total < before else "（沒有變便宜）" if total == before else f"（漲 {total - before:,}）")
+        tl(t).extend(route_block(name, [f"💰 <b>{fmtp(total)}</b> 未稅來回{diff}",
+                                        f"📅 去 {short_day(tb[1])} {tb[3]:,}　回 {short_day(tb[2])} {tb[4]:,}"]))
         ts = s.setdefault("tiger", {})
         ts.update(last=total, d1=tb[1].isoformat(), d2=tb[2].isoformat(), at=datetime.now(TW).strftime("%m/%d %H:%M"))
         if ts.get("min") is None or total < ts["min"]:
@@ -325,24 +337,24 @@ def tiger_sale_check(sale, tracks, state):
     routes = sale.get("routes") or []
     if routes:
         src = "官網大降價的航線" if "官網偵測" in (sale.get("title") or "") else "新聞裡的特價航線"
-        lines.append(f"\n<b>{src}</b>（單程未稅起價，出發 {dlabel(a)}～{dlabel(b)}）")
+        lines += ["━━━━━━━━━━", f"<b>{src}</b>", f"<i>單程未稅起價，出發 {short_day(a)}～{short_day(b)}</i>"]
     for r in routes[:6]:
         days = {d: p for d, p in tiger.daily(r["from"], r["to"]).items() if a.isoformat() <= d <= b.isoformat()}
         label = f"{html.escape(r.get('fromName') or tiger.name(r['from']))} → {html.escape(r.get('toName') or tiger.name(r['to']))}"
-        news = (f"　新聞 {r['price']:,} 元起" if "官網偵測" not in (sale.get("title") or "") else "") if r.get("price") else ""
+        news = (f"（新聞寫 {r['price']:,} 起）" if "官網偵測" not in (sale.get("title") or "") else "") if r.get("price") else ""
         if not days:
-            lines.append(f"・{label}：" + ("虎航官網暫時抓不到資料" if not tiger.ok(r["from"], r["to"]) else "這段期間沒有票價") + news)
+            lines.extend(route_block(label, ["⚠️ " + ("虎航官網暫時抓不到資料" if not tiger.ok(r["from"], r["to"]) else "這段期間沒有票價") + news]))
             continue
         low = min(days.values())
         dates = sorted(d for d, p in days.items() if p == low)
-        show = "、".join(dlabel(date.fromisoformat(d)) for d in dates[:5]) + (f" 等 {len(dates)} 天" if len(dates) > 5 else "")
-        hit = "　✅ 有特價" if r.get("price") and low <= r["price"] and news else ""
-        lines.append(f"・{label}：最低 <b>{fmtp(low)}</b>　{show}{news}{hit}")
-    lines.append("\n<i>這是虎航官網的單人未稅起價，結帳會再加稅金；要輸入優惠碼的折扣這裡看不到。</i>"
+        show = "、".join(short_day(d) for d in dates[:4]) + (f" 等 {len(dates)} 天" if len(dates) > 4 else "")
+        hit = " ✅" if r.get("price") and low <= r["price"] and news else ""
+        lines.extend(route_block(label, [f"💰 <b>{fmtp(low)}</b>{news}{hit}", f"📅 {show}"]))
+    lines.append("━━━━━━━━━━\n<i>虎航官網單人未稅起價，結帳另加稅金；優惠碼的折扣這裡看不到。</i>"
                  "\n🔗 <a href=\"https://www.tigerairtw.com/\">到虎航官網訂票</a>")
     # 官網偵測到的特價：航線已經在「虎航官網出現特價！」講過了，這裡只傳給有追蹤的人
     send_sale(lines[:n0], buckets, lines[n0:] if (routes and not official) else [],
-              "" if official else "\n<b>你的追蹤</b>（未稅來回起價）")
+              "━━━━━━━━━━" if official else "━━━━━━━━━━\n<b>你的追蹤</b>")
 
 
 def sale_check(sale, tracks, state):
@@ -368,15 +380,15 @@ def sale_check(sale, tracks, state):
         before = s.get("last")
         name = html.escape(route_of(t))
         if best is None:
-            tl(t).append(f"・{name}：這次查詢失敗，晚點再試")
+            tl(t).extend(route_block(name, ["⚠️ 這次查詢失敗，晚點再試"]))
             continue
         p = best["price"]
         if before is None:
-            tl(t).append(f"・{name}：目前 <b>{fmtp(p)}</b>（{html.escape(best['airline'])} {best['dates']}）")
+            tl(t).extend(route_block(name, [f"💰 <b>{fmtp(p)}</b>　{html.escape(best['airline'])}", f"📅 {best['dates']}"]))
         elif p < before:
-            tl(t).append(f"・{name}：{fmtp(before)} → <b>{fmtp(p)}</b>（降 NT${before - p:,}）📉　{html.escape(best['airline'])} {best['dates']}")
+            tl(t).extend(route_block(name, [f"💰 {fmtp(before)} → <b>{fmtp(p)}</b>（📉 降 {before - p:,}）", f"🛫 {html.escape(best['airline'])}　📅 {best['dates']}"]))
         else:
-            tl(t).append(f"・{name}：{fmtp(p)}，沒有變便宜" + (f"（之前 {fmtp(before)}）" if p != before else ""))
+            tl(t).extend(route_block(name, [f"💰 {fmtp(p)}　沒有變便宜" + (f"（之前 {fmtp(before)}）" if p != before else "")]))
         s.update(last=p, lastAirline=best["airline"], lastDates=best["dates"], lastOut=best["out"], url=best["url"],
                  lastCheck=datetime.now(TW).strftime("%m/%d %H:%M"))
         if s.get("min") is None or p < s["min"]:
@@ -404,12 +416,12 @@ def sale_check(sale, tracks, state):
             news = f"新聞 {r['price']:,} 元起（未稅）" if r.get("price") else ""
             label = f"{html.escape(r.get('fromName', r['from']))} → {html.escape(r.get('toName', r['to']))}"
             if best:
-                lines.append(f"・{label}：<b>{fmtp(best[0])}</b>（{dlabel(best[1])} {html.escape(best[2])}）　{news}")
+                lines.extend(route_block(label, [f"💰 <b>{fmtp(best[0])}</b> 含稅單程　{news}", f"📅 {short_day(best[1])} {html.escape(best[2])}"]))
             else:
-                lines.append(f"・{label}：查不到（可能還沒更新、或被擋）　{news}")
+                lines.extend(route_block(label, [f"⚠️ 查不到（可能還沒更新、或被擋）　{news}"]))
         lines.append("\n<i>Google Flights 是含稅價，會比新聞的未稅價高；要輸入優惠碼的折扣這裡看不到。"
                      "便宜的座位很少，想搶的話直接到航空公司官網。</i>")
-    send_sale(lines[:n0], buckets, lines[n0:] if routes else [], "\n<b>你的追蹤</b>")
+    send_sale(lines[:n0], buckets, lines[n0:] if routes else [], "━━━━━━━━━━\n<b>你的追蹤</b>")
 
 
 def test_run(tracks, state):
