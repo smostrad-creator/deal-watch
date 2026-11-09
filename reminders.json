@@ -1269,50 +1269,5 @@ null
 "link": "https://utravel.com.hk/news/detail/20117576/%E9%A6%99%E6%B8%AF%E8%88%AA%E7%A9%BA-%E9%80%B1%E4%BA%8C%E6%BF%80%E8%B3%9E%E9%A3%9B-%E5%87%8C%E6%99%A8%E9%96%8B%E6%90%B6-%E5%8C%85-kg%E5%AF%84%E8%89%99%E8%A1%8C%E6%9D%8E-%E5%8F%B0%E5%8C%97%E4%BE%86%E5%9B%9E-%E8%B5%B7-%E9%A6%96%E7%88%BE-%E8%B5%B7",
 "start": "2026-11-10T00:00:00+08:00",
 "sent": false
-},
-{
-"kind": "sale",
-"start": "2026-11-09T15:27:24.042458+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "KHH",
-"to": "XXO",
-"fromName": "高雄",
-"toName": "XXO",
-"price": 999
-},
-{
-"from": "TPE",
-"to": "OIT",
-"fromName": "台北",
-"toName": "大分",
-"price": 1799
-},
-{
-"from": "KHH",
-"to": "XXV",
-"fromName": "高雄",
-"toName": "XXV",
-"price": 1599
-},
-{
-"from": "KHH",
-"to": "OKA",
-"fromName": "高雄",
-"toName": "沖繩",
-"price": 1399
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1
-]
 }
 ]
