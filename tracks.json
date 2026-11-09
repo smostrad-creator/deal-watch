@@ -27,5 +27,32 @@
   },
   "to": "5896121306",
   "owner": "ba49f316507f"
+ },
+ {
+  "id": "mw8nenw3",
+  "created": "2026-11-09 02:34",
+  "origin": "TPE",
+  "dest": "NRT",
+  "originLabel": "台北 TPE",
+  "destLabel": "東京 NRT",
+  "stops": "0",
+  "adults": 1,
+  "outFrom": null,
+  "outTo": null,
+  "retFrom": null,
+  "retTo": null,
+  "airlines": [],
+  "active": true,
+  "kind": "scan",
+  "scan": {
+   "startMonth": "2027-01",
+   "endMonth": "2027-01",
+   "days": 4
+  },
+  "notify": {
+   "mode": "drop"
+  },
+  "to": "9231332487",
+  "owner": "2f1efa238f1a"
  }
 ]
