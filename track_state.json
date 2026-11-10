@@ -4,9 +4,9 @@
   "used": 0
  },
  "mw7ryol9": {
-  "lastCheck": "11/10 08:30",
+  "lastCheck": "11/10 20:44",
   "fails": 0,
-  "last": 8942,
+  "last": 8943,
   "lastAirline": "長榮航空",
   "lastDates": "6/1(二)～6/7(一)",
   "lastOut": "07:40 - 09:55",
@@ -35,28 +35,32 @@
    [
     "11/10 08:30",
     8942
+   ],
+   [
+    "11/10 20:44",
+    8943
    ]
   ]
  },
  "mw8nenw3": {
   "tiger": {
-   "last": 7998,
-   "d1": "2027-01-05",
-   "d2": "2027-01-08",
-   "at": "11/10 08:33",
+   "last": 8298,
+   "d1": "2027-01-18",
+   "d2": "2027-01-21",
+   "at": "11/10 20:52",
    "min": 7998
   },
-  "lastCheck": "11/10 08:30",
+  "lastCheck": "11/10 20:44",
   "fails": 0,
-  "last": 9901,
-  "lastAirline": "酷航",
-  "lastDates": "1/17(日)～1/20(三)",
-  "lastOut": "14:25 - 18:30",
-  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDEtMTcoAGoFEgNUUEVyBRIDTlJUGhwSCjIwMjctMDEtMjAoAGoFEgNOUlRyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
-  "min": 9893,
-  "minAt": "11/09 10:35",
-  "minAirline": "酷航",
-  "minDates": "1/17(日)～1/20(三)",
+  "last": 9807,
+  "lastAirline": "捷星日本航空",
+  "lastDates": "1/7(四)～1/10(日)",
+  "lastOut": "16:45 - 20:55",
+  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDEtMDcoAGoFEgNUUEVyBRIDTlJUGhwSCjIwMjctMDEtMTAoAGoFEgNOUlRyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
+  "min": 9807,
+  "minAt": "11/10 20:44",
+  "minAirline": "捷星日本航空",
+  "minDates": "1/7(四)～1/10(日)",
   "history": [
    [
     "11/09 10:35",
@@ -69,6 +73,10 @@
    [
     "11/10 08:30",
     9901
+   ],
+   [
+    "11/10 20:44",
+    9807
    ]
   ]
  }
