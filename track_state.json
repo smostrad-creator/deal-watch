@@ -1,7 +1,7 @@
 {
  "_serp": {
   "month": "2026-11",
-  "used": 1
+  "used": 2
  },
  "mw7ryol9": {
   "lastCheck": "11/11 08:32",
@@ -54,13 +54,13 @@
    "at": "11/11 08:37",
    "min": 7998
   },
-  "lastCheck": "11/11 08:32",
+  "lastCheck": "11/11 10:17",
   "fails": 0,
-  "last": 9902,
+  "last": 10533,
   "lastAirline": "酷航",
-  "lastDates": "1/17(日)～1/20(三)",
-  "lastOut": "14:25 - 18:30",
-  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDEtMTcoAGoFEgNUUEVyBRIDTlJUGhwSCjIwMjctMDEtMjAoAGoFEgNOUlRyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
+  "lastDates": "1/8(五)～1/11(一)",
+  "lastOut": "06:50 - 10:55",
+  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDEtMDgoAGoFEgNUUEVyBRIDTlJUGhwSCjIwMjctMDEtMTEoAGoFEgNOUlRyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
   "min": 9807,
   "minAt": "11/10 20:44",
   "minAirline": "捷星日本航空",
