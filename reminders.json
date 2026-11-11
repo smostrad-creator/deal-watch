@@ -1169,38 +1169,7 @@ null
 "title": "雙11旅展開搶！星宇航空來回機票3999元、飯店50元有找（慶Trip.com9週年，11月11日晚間20點，星展信用卡專屬單程機票999元開賣，台北）",
 "link": "https://tw.news.yahoo.com/%E9%9B%9911%E6%97%85%E5%B1%95%E9%96%8B%E6%90%B6-%E6%98%9F%E5%AE%87%E8%88%AA%E7%A9%BA%E4%BE%86%E5%9B%9E%E6%A9%9F%E7%A5%A83999%E5%85%83-%E9%A3%AF%E5%BA%9750%E5%85%83%E6%9C%89%E6%89%BE-090300231.html",
 "start": "2026-11-11T20:00:00+08:00",
-"sent": false
-},
-{
-"kind": "sale",
-"start": "2026-11-11T15:09:26.146560+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "TPE",
-"to": "OIT",
-"fromName": "台北",
-"toName": "大分",
-"price": 1999
-},
-{
-"from": "TPE",
-"to": "FUK",
-"fromName": "台北",
-"toName": "福岡",
-"price": 2099
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1
-]
+"sent": true
 },
 {
 "kind": "sale",
