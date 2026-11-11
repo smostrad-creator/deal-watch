@@ -340,7 +340,7 @@ def tiger_sale_check(sale, tracks, state):
         lines += ["━━━━━━━━━━", f"<b>{src}</b>", f"<i>單程未稅起價，出發 {short_day(a)}～{short_day(b)}</i>"]
     for r in routes[:6]:
         days = {d: p for d, p in tiger.daily(r["from"], r["to"]).items() if a.isoformat() <= d <= b.isoformat()}
-        label = f"{html.escape(r.get('fromName') or tiger.name(r['from']))} → {html.escape(r.get('toName') or tiger.name(r['to']))}"
+        label = f"{html.escape(tiger.name(r['from']))} → {html.escape(tiger.name(r['to']))}"
         news = (f"（新聞寫 {r['price']:,} 起）" if "官網偵測" not in (sale.get("title") or "") else "") if r.get("price") else ""
         if not days:
             lines.extend(route_block(label, ["⚠️ " + ("虎航官網暫時抓不到資料" if not tiger.ok(r["from"], r["to"]) else "這段期間沒有票價") + news]))

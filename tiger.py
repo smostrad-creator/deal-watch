@@ -92,5 +92,21 @@ def round_trip(origin, dest, pairs):
     return best
 
 
+COUNTRY = {"NRT": "日本", "HND": "日本", "KIX": "日本", "OKJ": "日本", "YGJ": "日本", "KCZ": "日本", "FUK": "日本",
+           "HSG": "日本", "KMI": "日本", "KMJ": "日本", "OIT": "日本", "CTS": "日本", "HKD": "日本", "SDJ": "日本",
+           "AXT": "日本", "FKS": "日本", "HNA": "日本", "KIJ": "日本", "NGO": "日本", "KMQ": "日本", "OKA": "日本",
+           "ISG": "日本", "ICN": "韓國", "GMP": "韓國", "PUS": "韓國", "CJU": "韓國", "DAD": "越南", "HKT": "泰國",
+           "BKK": "泰國", "MFM": "澳門"}
+
+
 def name(code):
-    return NAMES.get(code, code)
+    """台北（桃園）、日本（福岡）這種寫法"""
+    if code == "TPE":
+        return "台北（桃園）"
+    city = NAMES.get(code, code)
+    c = COUNTRY.get(code)
+    if not c:
+        return city
+    if c == "澳門":
+        return "澳門"
+    return f"{c}（{city}）"
