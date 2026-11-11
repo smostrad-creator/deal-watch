@@ -99,6 +99,10 @@ AIRLINE_WORDS = ["虎航", "樂桃", "酷航", "捷星", "亞航", "亞洲航空
 # 抽獎、信用卡、里程這類活動不推
 PROMO_EXCLUDE = ["抽獎", "抽機票", "抽出", "抽中", "抽送", "抽好禮", "好禮", "聯名卡", "信用卡", "刷卡", "里程", "集點",
                  "點數", "會員日送", "留言", "分享抽", "轉發"]
+# 不是在航空公司官網訂的（訂票網站、旅行社）不推
+OTA_WORDS = ["trip.com", "攜程", "agoda", "klook", "kkday", "expedia", "booking.com", "hotels.com", "skyscanner",
+             "易遊網", "eztravel", "雄獅", "可樂旅遊", "東南旅遊", "燦星", "五福", "易飛網", "ezfly", "樂天旅遊",
+             "liontravel", "背包客棧", "旅行社", "訂房網", "比價網", "信用卡", "刷卡"]
 # 台灣國內線（離島、東部）的字眼
 DOMESTIC_WORDS = ["離島", "國內線", "澎湖", "馬公", "金門", "馬祖", "南竿", "北竿", "七美", "望安",
                   "蘭嶼", "綠島", "台東", "臺東", "花蓮", "恆春", "本島"]
@@ -121,6 +125,8 @@ def is_ticket_deal(t):
 def deal_level(t):
     """yes＝標題就符合；maybe＝有機票和開賣時間、但標題沒寫價格（要點進去看內文）；no＝不符合"""
     if any(w in t for w in EXCLUDE_WORDS) or any(w in t for w in PROMO_EXCLUDE):
+        return "no"
+    if any(w in t.lower() for w in OTA_WORDS):
         return "no"
     # 只要國際線：有台灣國內地名、又沒有國外地名的，不推
     if any(w in t for w in DOMESTIC_WORDS) and not any(w in t for w in INTL_WORDS):
@@ -552,6 +558,12 @@ def is_promo(item):
 
 
 def promo_level(item):
+    if any(w in (item.get("source") or "").lower() for w in OTA_WORDS):
+        return "no"
+    return _promo_level(item)
+
+
+def _promo_level(item):
     if item["pub"] and item["pub"] < datetime.now(TW) - timedelta(days=MAX_AGE_DAYS):
         return "no"
     return deal_level(item["title"])
