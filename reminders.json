@@ -1155,29 +1155,5 @@ null
 1,
 2
 ]
-},
-{
-"kind": "sale",
-"start": "2026-11-11T17:28:34.395100+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "TPE",
-"to": "AXT",
-"fromName": "台北（桃園）",
-"toName": "日本（秋田）",
-"price": 2699
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1
-]
 }
 ]
