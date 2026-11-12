@@ -4,12 +4,12 @@
   "used": 8
  },
  "mw7ryol9": {
-  "lastCheck": "11/12 08:46",
+  "lastCheck": "11/12 20:49",
   "fails": 0,
-  "last": 8942,
+  "last": 8947,
   "lastAirline": "長榮航空",
   "lastDates": "6/1(二)～6/7(一)",
-  "lastOut": "09:20 - 11:40",
+  "lastOut": "07:40 - 09:55",
   "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDYtMDEoAGoFEgNUUEVyBRIDU0dOGhwSCjIwMjctMDYtMDcoAGoFEgNTR05yBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
   "min": 8932,
   "minAt": "11/11 20:47",
@@ -51,24 +51,28 @@
    [
     "11/12 08:46",
     8942
+   ],
+   [
+    "11/12 20:49",
+    8947
    ]
   ]
  },
  "mw8nenw3": {
   "tiger": {
-   "last": 8298,
-   "d1": "2027-01-18",
-   "d2": "2027-01-21",
-   "at": "11/12 08:51",
+   "last": 8498,
+   "d1": "2027-01-10",
+   "d2": "2027-01-13",
+   "at": "11/12 20:51",
    "min": 7998
   },
-  "lastCheck": "11/12 08:46",
+  "lastCheck": "11/12 20:49",
   "fails": 0,
-  "last": 10340,
-  "lastAirline": "台灣虎航",
-  "lastDates": "1/10(日)～1/13(三)",
-  "lastOut": "15:35 - 19:35",
-  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDEtMTAoAGoFEgNUUEVyBRIDTlJUGhwSCjIwMjctMDEtMTMoAGoFEgNOUlRyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
+  "last": 10355,
+  "lastAirline": "酷航",
+  "lastDates": "1/19(二)～1/22(五)",
+  "lastOut": "14:30 - 18:30",
+  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDEtMTkoAGoFEgNUUEVyBRIDTlJUGhwSCjIwMjctMDEtMjIoAGoFEgNOUlRyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
   "min": 8593,
   "minAt": "11/11 11:39",
   "minAirline": "樂桃航空",
@@ -101,6 +105,10 @@
    [
     "11/12 08:46",
     10340
+   ],
+   [
+    "11/12 20:49",
+    10355
    ]
   ]
  }
