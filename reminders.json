@@ -1129,29 +1129,5 @@ null
 "6228363916",
 "9231332487"
 ]
-},
-{
-"kind": "sale",
-"start": "2026-11-13T15:11:25.753339+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "TNN",
-"to": "KMJ",
-"fromName": "台南",
-"toName": "日本（熊本）",
-"price": 2099
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1
-]
 }
 ]
