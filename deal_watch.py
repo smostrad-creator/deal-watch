@@ -466,8 +466,8 @@ def tiger_watch(reminders):
         if not rows:
             continue
         for o, d in {(r.get("origin"), r.get("destination")) for r in rows}:
-            if st not in (o, d):
-                continue
+            if st not in (o, d) or tiger.virtual(o) or tiger.virtual(d):
+                continue  # XX 開頭是虎航內部的地區代碼，跟真的機場重複
             days = {k: v for k, v in tiger.daily(o, d).items() if lo <= k <= hi}
             if days:
                 low = min(days.values())

@@ -99,6 +99,11 @@ COUNTRY = {"NRT": "日本", "HND": "日本", "KIX": "日本", "OKJ": "日本", "
            "BKK": "泰國", "MFM": "澳門"}
 
 
+def virtual(code):
+    """XX 開頭的是虎航官網內部的地區代碼（例如 XX6、XXO），跟真正的機場重複，略過"""
+    return not code or str(code).upper().startswith("XX")
+
+
 def name(code):
     """台北（桃園）、日本（福岡）這種寫法"""
     if code == "TPE":
