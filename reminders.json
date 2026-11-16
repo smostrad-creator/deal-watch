@@ -1100,44 +1100,6 @@ null
 },
 {
 "kind": "sale",
-"start": "2026-11-16T12:10:41.593418+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "KHH",
-"to": "XX6",
-"fromName": "高雄",
-"toName": "XX6",
-"price": 1899
-},
-{
-"from": "KHH",
-"to": "NGO",
-"fromName": "高雄",
-"toName": "日本（名古屋）",
-"price": 1899
-},
-{
-"from": "RMQ",
-"to": "OKA",
-"fromName": "台中",
-"toName": "日本（沖繩）",
-"price": 1799
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1
-]
-},
-{
-"kind": "sale",
 "start": "2026-11-17T11:09:00+08:00",
 "title": "HK Express｜香港快運再推長者優惠單程票價低至65元逾20個航點涵蓋日韓泰內地(11:09) - 20261116 - 即時財經新聞",
 "airline": "香港快運航空",
