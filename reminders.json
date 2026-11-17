@@ -793,43 +793,5 @@ null
 "6228363916",
 "9231332487"
 ]
-},
-{
-"kind": "sale",
-"start": "2026-11-17T15:14:10.073130+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "TPE",
-"to": "OKA",
-"fromName": "台北（桃園）",
-"toName": "日本（沖繩）",
-"price": 999
-},
-{
-"from": "TNN",
-"to": "OKA",
-"fromName": "台南",
-"toName": "日本（沖繩）",
-"price": 1399
-},
-{
-"from": "RMQ",
-"to": "OKA",
-"fromName": "台中",
-"toName": "日本（沖繩）",
-"price": 1799
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1
-]
 }
 ]
