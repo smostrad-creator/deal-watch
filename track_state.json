@@ -4,13 +4,13 @@
   "used": 20
  },
  "mw7ryol9": {
-  "lastCheck": "11/16 22:43",
+  "lastCheck": "11/17 08:37",
   "fails": 0,
-  "last": 8938,
+  "last": 8935,
   "lastAirline": "長榮航空",
-  "lastDates": "6/1(二)～6/7(一)",
-  "lastOut": "07:40 - 09:55",
-  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDYtMDEoAGoFEgNUUEVyBRIDU0dOGhwSCjIwMjctMDYtMDcoAGoFEgNTR05yBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
+  "lastDates": "6/2(三)～6/8(二)",
+  "lastOut": "19:35 - 22:00",
+  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDYtMDIoAGoFEgNUUEVyBRIDU0dOGhwSCjIwMjctMDYtMDgoAGoFEgNTR05yBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
   "min": 8931,
   "minAt": "11/13 20:47",
   "minAirline": "長榮航空",
@@ -87,6 +87,10 @@
    [
     "11/16 22:43",
     8938
+   ],
+   [
+    "11/17 08:37",
+    8935
    ]
   ]
  },
@@ -95,12 +99,12 @@
    "last": 8798,
    "d1": "2027-01-10",
    "d2": "2027-01-13",
-   "at": "11/16 22:54",
+   "at": "11/17 08:44",
    "min": 7998
   },
-  "lastCheck": "11/17 01:15",
+  "lastCheck": "11/17 08:37",
   "fails": 0,
-  "last": 10518,
+  "last": 10523,
   "lastAirline": "酷航",
   "lastDates": "1/8(五)～1/11(一)",
   "lastOut": "06:50 - 10:55",
@@ -173,6 +177,10 @@
    [
     "11/16 22:43",
     9146
+   ],
+   [
+    "11/17 08:37",
+    10523
    ]
   ]
  }
