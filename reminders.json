@@ -892,30 +892,6 @@ null
 },
 {
 "kind": "sale",
-"start": "2026-11-19T11:26:30.959722+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "KHH",
-"to": "OKA",
-"fromName": "高雄",
-"toName": "日本（沖繩）",
-"price": 999
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1
-]
-},
-{
-"kind": "sale",
 "start": "2026-11-19T15:16:37.104963+08:00",
 "title": "虎航官網偵測到特價",
 "airline": "台灣虎航",
