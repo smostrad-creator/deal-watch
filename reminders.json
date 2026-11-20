@@ -914,50 +914,5 @@ null
 "link": "https://www.ettoday.net/news/20261118/3274129.htm",
 "start": "2026-11-23T10:00:00+08:00",
 "sent": false
-},
-{
-"kind": "sale",
-"start": "2026-11-20T11:20:09.083100+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "KHH",
-"to": "ISG",
-"fromName": "高雄",
-"toName": "日本（石垣島）",
-"price": 999
-},
-{
-"from": "KHH",
-"to": "GMP",
-"fromName": "高雄",
-"toName": "韓國（首爾金浦）",
-"price": 1099
-},
-{
-"from": "KHH",
-"to": "OKA",
-"fromName": "高雄",
-"toName": "日本（沖繩）",
-"price": 999
-},
-{
-"from": "TNN",
-"to": "OKA",
-"fromName": "台南",
-"toName": "日本（沖繩）",
-"price": 999
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1
-]
 }
 ]
