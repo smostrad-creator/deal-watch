@@ -922,29 +922,5 @@ null
 "link": "https://news.google.com/rss/articles/CBMi2gNBVV95cUxOU3NZUjZLUTYzTDYzR1VpdkM5aFhsRkRxV1E3MkNraDVhb0Z2UWJGcXVHaWhxVGdvSGM4VFc5Ui1SNU9fajBHQjNWUWtQeGJ4UUlNZER4WTlwcFRUM0o4SkNBZjVGOHJjRms4M0l0RzRZMFNoamJMN2M3SFpDeEY0c0ZNLWRrblRkdDhqOXF5UkJ4SDhZeUUzRDRNTnZrVzNoSkM3U3N3V3ZOaU1TWjdaWk50c1AzXzhlUnFhdHZINmZmVjhCaTU0Yk5hM01UYkpZd25NZTcxS1VwX1ZfeWp6X2VMQlk2UEwxcFFrMWVxcXB4V2VxZDFFNEk1czYwejBfSGUxaTlOVUpYelFzb3lxM3FzOFBYVFRKVXdkUGllYXR6UEhxa0pTMW96Rm8ybHhFb3drbURDWXhoMVJ2VG9xVEpVdHFrMjJITmxvZmV0V3lHendGZkJINGhDVHh1dU8wZjA0ejZEeW8yZ0FKNGtldEhtNWwxanI1Sms2bDcwZ2FXdExyanNYelY0N2wwbjBmakRaVlU4VVd0MnpBa0hFajljRWJWMFVlN3FmT3NxYTVDZTZzNmh2NzladU9UQXE3S1pmUXlodDhPUndldFRFWGw0aDVkd0FadWc?oc=5",
 "start": "2026-11-21T10:57:00+08:00",
 "sent": false
-},
-{
-"kind": "sale",
-"start": "2026-11-21T01:28:55.593599+08:00",
-"title": "虎航官網偵測到特價",
-"airline": "台灣虎航",
-"code": "IT",
-"source": "official",
-"routes": [
-{
-"from": "TNN",
-"to": "OKA",
-"fromName": "台南",
-"toName": "日本（沖繩）",
-"price": 999
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1
-]
 }
 ]
