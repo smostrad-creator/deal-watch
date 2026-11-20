@@ -1,12 +1,12 @@
 {
  "_serp": {
   "month": "2026-11",
-  "used": 30
+  "used": 35
  },
  "mw7ryol9": {
-  "lastCheck": "11/19 20:53",
+  "lastCheck": "11/20 08:38",
   "fails": 0,
-  "last": 8938,
+  "last": 8943,
   "lastAirline": "長榮航空",
   "lastDates": "6/1(二)～6/7(一)",
   "lastOut": "07:40 - 09:55",
@@ -111,6 +111,10 @@
    [
     "11/19 20:53",
     8938
+   ],
+   [
+    "11/20 08:38",
+    8943
    ]
   ]
  },
@@ -119,16 +123,16 @@
    "last": 9298,
    "d1": "2027-01-05",
    "d2": "2027-01-08",
-   "at": "11/19 21:01",
+   "at": "11/20 09:01",
    "min": 7998
   },
-  "lastCheck": "11/19 20:53",
+  "lastCheck": "11/20 08:38",
   "fails": 0,
-  "last": 9752,
+  "last": 10540,
   "lastAirline": "樂桃航空",
-  "lastDates": "1/16(六)～1/19(二)",
+  "lastDates": "1/15(五)～1/18(一)",
   "lastOut": "17:15 - 21:30",
-  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDEtMTYoAGoFEgNUUEVyBRIDTlJUGhwSCjIwMjctMDEtMTkoAGoFEgNOUlRyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
+  "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDEtMTUoAGoFEgNUUEVyBRIDTlJUGhwSCjIwMjctMDEtMTgoAGoFEgNOUlRyBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
   "min": 8593,
   "minAt": "11/11 11:39",
   "minAirline": "樂桃航空",
@@ -221,6 +225,10 @@
    [
     "11/19 20:53",
     9752
+   ],
+   [
+    "11/20 08:38",
+    10540
    ]
   ]
  }
