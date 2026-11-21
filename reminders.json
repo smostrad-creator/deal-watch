@@ -912,21 +912,5 @@ null
 "link": "https://www.ettoday.net/news/20261118/3274129.htm",
 "start": "2026-11-23T10:00:00+08:00",
 "sent": false
-},
-{
-"kind": "sale",
-"start": "2026-11-21T10:57:00+08:00",
-"title": "HK Express︱香港快運推大專生機票優惠單程票價低至88元逾20航點涵蓋日韓台泰(10:57) - 20261120 - 即時財經新聞",
-"airline": "香港快運航空",
-"code": "UO",
-"routes": [],
-"travel": [
-null,
-null
-],
-"done": [
-1,
-2
-]
 }
 ]
