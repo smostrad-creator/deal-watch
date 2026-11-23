@@ -828,52 +828,5 @@ null
 "6228363916",
 "9231332487"
 ]
-},
-{
-"kind": "sale",
-"start": "2026-11-23T10:00:00+08:00",
-"title": "機票促銷快收！虎航優惠「全航線單程999元起」這時開搶",
-"airline": "台灣虎航",
-"code": "IT",
-"routes": [
-{
-"from": "KHH",
-"to": "NRT",
-"fromName": "高雄",
-"toName": "東京",
-"price": null
-},
-{
-"from": "KHH",
-"to": "ICN",
-"fromName": "高雄",
-"toName": "首爾",
-"price": null
-},
-{
-"from": "KHH",
-"to": "CJU",
-"fromName": "高雄",
-"toName": "濟州",
-"price": null
-},
-{
-"from": "KHH",
-"to": "DAD",
-"fromName": "高雄",
-"toName": "峴港",
-"price": null
-}
-],
-"travel": [
-null,
-null
-],
-"done": [
-1,
-2,
-3,
-4
-]
 }
 ]
