@@ -1,15 +1,15 @@
 {
  "_serp": {
   "month": "2026-11",
-  "used": 54
+  "used": 59
  },
  "mw7ryol9": {
-  "lastCheck": "11/27 08:50",
+  "lastCheck": "11/27 20:53",
   "fails": 0,
   "last": 8944,
   "lastAirline": "長榮航空",
   "lastDates": "6/1(二)～6/7(一)",
-  "lastOut": "09:20 - 11:40",
+  "lastOut": "07:40 - 09:55",
   "url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjctMDYtMDEoAGoFEgNUUEVyBRIDU0dOGhwSCjIwMjctMDYtMDcoAGoFEgNTR05yBRIDVFBFQgEBSAGYAQE=&hl=zh-TW&curr=TWD",
   "min": 8928,
   "minAt": "11/24 08:42",
@@ -170,6 +170,10 @@
    ],
    [
     "11/27 08:50",
+    8944
+   ],
+   [
+    "11/27 20:53",
     8944
    ]
   ]
